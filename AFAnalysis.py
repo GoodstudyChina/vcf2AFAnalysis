@@ -16,7 +16,6 @@ from scipy.stats import kde
 import matplotlib.pyplot as plt
 
 # TODO
-# Intervalle berechnen für beide pools
 # scaffoldenden plotten von agp (als punkte)
 
 
@@ -119,372 +118,12 @@ def extendIntervalUpstream(SNPDataFrame, position, pool, threshold, outlierToler
                 return start
 
 
-def naiveDefineIntervals(SNPDataFrame,  threshold, pools, outlierTolerance, filterIntervalsSmallerThan = int(1000)):
-    """ Takes a DataFrame with Variants, and returns a List of the longest stretches of Variants equal to or above the threshold. Es werden erst Startpunkte anhand der deltaAF
-gesucht. Erweitert werden die Intervalle dann so lange, wie die AF des ersten pools stimmt, dieser also nur ein Allel aufweist."""
 
-################Länge der Intervall + 1
-    print "searching for intervals"
-    # testing if threshold is valid
-    if not 0.0 <= threshold and threshold <= 1.0:
-        print " Threshold not within range. setting to 0.1"
-        threshold = 0.1
-    print "Threshold for outliers: " + str(threshold)
-    listOfIntervals = []
-    filterCount = 0
-    listOfFilteredIntervals = []
-    #"ersten SNP suchen mit entsprechender AF. So lange weitergehen, bis x SNPs nacheinander (aus dem confidence Interval; binominalverteilung mit coverage um AF), unter den
-    #threshold fallen"
-
-    # finding startpoints for interval calculation
-    #mean_dAF = (absDelta(SNPDataFrame['Frequency' + pools[0]],SNPDataFrame['Frequency' + pools[1]])).mean()
-    sequencingErrorRate = 0.01 # sequencing error rate according to sequencing method
-    print "assumed sequencing error rate: " + str(sequencingErrorRate)
-    phenotypicDifference = 1 # difference in pools should ideally be 1 = 100%
-    print "assumed phenotypic difference between pools: " + str(phenotypicDifference)
-    # seeds of intervalls; delta value = 1 - plausible error rate
-    print "finding seeds of intervals"
-
-    listOfPutativeStartPositionsPool0 = SNPDataFrame[(abs(SNPDataFrame['Frequency' + pools[0]] - SNPDataFrame['Frequency' + pools[1]]) >= (phenotypicDifference - 100. * sequencingErrorRate / (SNPDataFrame['Coverage' + pools[0]] + SNPDataFrame['Coverage' + pools[1]])/2)) & (SNPDataFrame['Frequency' + pools[0]] <= threshold)]['Position'].tolist() 
-    
-    listOfPutativeStartPositionsPool1 = SNPDataFrame[(abs(SNPDataFrame['Frequency' + pools[0]] - SNPDataFrame['Frequency' + pools[1]]) >= (phenotypicDifference - 100. * sequencingErrorRate / (SNPDataFrame['Coverage' + pools[0]] + SNPDataFrame['Coverage' + pools[1]])/2)) & (SNPDataFrame['Frequency' + pools[1]] <= threshold)]['Position'].tolist() 
-
-    listOfPutativeStartPositions = listOfPutativeStartPositionsPool0
-
-
-    print "calculating intervals for pool " + pools[0]
-    print listOfPutativeStartPositions
-
-    if len(listOfPutativeStartPositions) > 0:
-        # initialising
-        print "extending seeds"
-        start = 0
-        end = 0
-        length = len(listOfPutativeStartPositions)
-        i = 0
-        
-    # extend the interval as far as possible
-        while i < length: # as long as there are still seeds to check
-            if start == 0: # initialising new search
-                start = listOfPutativeStartPositions[i]
-                print "seed position: " + str(start)
-                end = start
-                errorCount = 0
-            else:
-
-# extend downstream
-                extend = True
-                
-                print "extend downstream"
-
-
-                while extend == True:
-                    nextSNP = SNPDataFrame[(SNPDataFrame['Position'] > end)].head(1)
-                    if (nextSNP.iloc[0]['Frequency' + pools[0]]  <= threshold) and errorCount < outlierTolerance: # next AF okay
-                        end = nextSNP.iloc[0,1]
-                        errorCount = 0
-                        #print 'correct frequency until ' + str(end)
-                    elif (nextSNP.iloc[0]['Frequency' + pools[0]]  >= threshold) and errorCount < outlierTolerance: # if frequency to low, go on
-                        searchPosition = nextSNP
-                        while (searchPosition.iloc[0]['Frequency' + pools[0]]  >= threshold) and errorCount < outlierTolerance: # look as far as outlier tolerance allows
-                            #print 'trying to extend interval to ' + str(searchPosition.iloc[0,1])
-                            #print 'AF ' + str(searchPosition.iloc[0]['Frequency' + pools[0]])
-                            #print 'nextAF ' + str(SNPDataFrame[(SNPDataFrame['Position'] > searchPosition.iloc[0,1])].head(1).iloc[0]['Frequency' + pools[0]])
-                            if (SNPDataFrame[(SNPDataFrame['Position'] > searchPosition.iloc[0,1])].head(1).iloc[0]['Frequency' + pools[0]]  <= threshold): # nextAF to low
-                                end = searchPosition.iloc[0,1]
-                                break
-
-
-                            searchPosition = SNPDataFrame[(SNPDataFrame['Position'] > searchPosition.iloc[0,1])].head(1)
-                            errorCount += 1
-                            #print errorCount
-                            
-                        
-                        
-                        if (SNPDataFrame[(SNPDataFrame['Position'] > end)].head(1).iloc[0]['Frequency' + pools[0]]  <= threshold):
-                            errorCount = 0
-                            #print 'reseting counter'
-                        
-                        
-                    else:
-                        extend = False
-                        print start, end
-                        print 'not extending any further'
-                        
- #extend upstream
-                extend = True
-                errorCount = 0
-                print "extend upstream"
-
-
-                while extend == True:
-                    #print "start: " + str(start)
-                    previousSNP = SNPDataFrame[(SNPDataFrame['Position'] < start)].tail(1)
-                    #print previousSNP
-                    #print "AF:"
-                    #print previousSNP.iloc[0]['Frequency' + pools[0]]
-                    #print "error count: " + str(errorCount)
-                    if (previousSNP.iloc[0]['Frequency' + pools[0]]  <= threshold) and errorCount < outlierTolerance:
-                        start = previousSNP.iloc[0,1]
-                        errorCount = 0
-                        #print 'correct frequency until ' + str(start)
-                    elif (previousSNP.iloc[0]['Frequency' + pools[0]]  >= threshold) and errorCount < outlierTolerance:
-                        searchPosition = previousSNP
-                        while len(searchPosition.index)>0 and (searchPosition.iloc[0]['Frequency' + pools[0]]  >= threshold) and errorCount < outlierTolerance: # falls der errorCounter noch nicht zu hoch ist wird weiter verlängert
-                            #print 'trying to extend interval to ' + str(searchPosition.iloc[0,1])
-                            #print 'AF ' + str(searchPosition.iloc[0]['Frequency' + pools[0]])
-                            #print 'nextAF ' + str(SNPDataFrame[(SNPDataFrame['Position'] < searchPosition.iloc[0,1])].tail(1).iloc[0]['Frequency' + pools[0]])
-                            if len(SNPDataFrame[(SNPDataFrame['Position'] < searchPosition.iloc[0,1])].index) != 0 and (SNPDataFrame[(SNPDataFrame['Position'] < searchPosition.iloc[0,1])].tail(1).iloc[0]['Frequency' + pools[0]]  <= threshold):
-                                start = searchPosition.iloc[0,1]
-                                break
-
-
-                            searchPosition = SNPDataFrame[(SNPDataFrame['Position'] < searchPosition.iloc[0,1])].tail(1)
-                            errorCount += 1
-                            #print "Error Count"
-                            #print errorCount
-                            
-                        
-                        
-                        if (SNPDataFrame[(SNPDataFrame['Position'] < start)].tail(1).iloc[0]['Frequency' + pools[0]]  <= threshold):
-                            errorCount = 0
-                            #print 'reseting counter'
-                        
-                        
-                    else:
-                        extend = False
-
-                        print 'extended interval:'
-                        print start, end
-                        print 'not extending any further'
-                        
-                        
-                
-
-                intervalLength = int(end) - int(start)
-                if intervalLength < filterIntervalsSmallerThan:
-                       print "filtered Interval"
-                       print str(start) + ", " + str(end)
-                       listOfFilteredIntervals.append((int(start),int(end),int(end)-int(start)))
-                       start = 0
-                       filterCount+=1
-                       i += 1
-                else:
-                       #end = nextSNP.iloc[0,1]
-                       print "appending interval"
-                       listOfIntervals.append((int(start),int(end),int(end)-int(start)))
-                       while  i < len(listOfPutativeStartPositions) and end >= listOfPutativeStartPositions[i]:
-                           #print "leave out starting points that are within the interval"
-                           #print 'end:' + str(end)
-                           #print 'next Start: ' + str(listOfPutativeStartPositions[i])
-                           i += 1
-                       start = 0
-                #print "Interval number: " + str(i)
-                #print "number of starting points: " + str(length)
-
-        
-
-
-##    # check borders of interval;
-##    unextendedIntervals = listOfIntervals
-##    print "correcting interval borders"
-##    for i, interval in enumerate(listOfIntervals):
-##
-##        start, end, length = interval
-##        extend = True
-##        print "Interval before adjustment: "
-##        print str(interval)
-###        print str(start) +", " + str(end) + ", " + str(end - start)
-### extend start
-##        while extend == True:
-##            #print 'extending start'
-##            previousSNPs = SNPDataFrame[(SNPDataFrame['Position'] < start)].tail(outlierTolerance)
-##
-##            if (previousSNPs['Frequency' + pools[0]] <= threshold).any().any():
-##                start = previousSNPs.iloc[outlierTolerance - 1,1]
-##                #print "extending Start to " + str(start)
-##            else:
-##                extend = False
-##
-##        clean = True    
-##        
-###clean end
-##
-##
-##        while clean == True:
-##            lastSNP = SNPDataFrame[(SNPDataFrame['Position'] == end)]
-##            #print 'cleaning: '
-##            #print lastSNP
-##            if lastSNP.iloc[0]['Frequency' + pools[0]]  > threshold:
-##                end = SNPDataFrame[(SNPDataFrame['Position'] < end)].tail(1).iloc[0,1]
-##                #print 'cutting to ' + str( end)
-##            else:
-##                clean = False
-##
-### correct interval
-##        print "Interval after adjustment:"
-##        print str(start) +", " + str(end) + ", " + str(end - start)
-##
-##        listOfIntervals[i] = (start,end, end-start)
-
-    #print listOfPutativeStartPositions
-    #print unextendedIntervals
-    #from IPython import embed
-    #embed()
-
-
-
-    print "calculating intervals for pool " + pools[1]
-
-    listOfPutativeStartPositions = listOfPutativeStartPositionsPool1
-
-    
-    print listOfPutativeStartPositions
-
-    if len(listOfPutativeStartPositions) > 0:
-        # initialising
-        print "extending seeds"
-        start = 0
-        end = 0
-        length = len(listOfPutativeStartPositions)
-        i = 0
-        
-    # extend the interval as far as possible
-        while i < length: # as long as there are still seeds to check
-            if start == 0: # initialising new search
-                start = listOfPutativeStartPositions[i]
-                print "seed position: " + str(start)
-                end = start
-                errorCount = 0
-            else:
-
-# extend downstream
-                extend = True
-                
-                print "extend downstream"
-
-
-                while extend == True:
-                    nextSNP = SNPDataFrame[(SNPDataFrame['Position'] > end)].head(1)
-                    if (nextSNP.iloc[0]['Frequency' + pools[1]]  <= threshold) and errorCount < outlierTolerance: # next AF okay
-                        end = nextSNP.iloc[0,1]
-                        errorCount = 0
-                        #print 'correct frequency until ' + str(end)
-                    elif (nextSNP.iloc[0]['Frequency' + pools[1]]  >= threshold) and errorCount < outlierTolerance: # if frequency to low, go on
-                        searchPosition = nextSNP
-                        while (searchPosition.iloc[0]['Frequency' + pools[1]]  >= threshold) and errorCount < outlierTolerance: # look as far as outlier tolerance allows
-                            #print 'trying to extend interval to ' + str(searchPosition.iloc[0,1])
-                            #print 'AF ' + str(searchPosition.iloc[0]['Frequency' + pools[0]])
-                            #print 'nextAF ' + str(SNPDataFrame[(SNPDataFrame['Position'] > searchPosition.iloc[0,1])].head(1).iloc[0]['Frequency' + pools[0]])
-                            if (SNPDataFrame[(SNPDataFrame['Position'] > searchPosition.iloc[0,1])].head(1).iloc[0]['Frequency' + pools[1]]  <= threshold): # nextAF to low
-                                end = searchPosition.iloc[0,1]
-                                break
-
-
-                            searchPosition = SNPDataFrame[(SNPDataFrame['Position'] > searchPosition.iloc[0,1])].head(1)
-                            errorCount += 1
-                            #print errorCount
-                            
-                        
-                        
-                        if (SNPDataFrame[(SNPDataFrame['Position'] > end)].head(1).iloc[0]['Frequency' + pools[1]]  <= threshold):
-                            errorCount = 0
-                            #print 'reseting counter'
-                        
-                        
-                    else:
-                        extend = False
-                        print start, end
-                        print 'not extending any further'
-                        
- #extend upstream
-                extend = True
-                errorCount = 0
-                print "extend upstream"
-
-
-                while extend == True:
-                    #print "start: " + str(start)
-                    previousSNP = SNPDataFrame[(SNPDataFrame['Position'] < start)].tail(1)
-                    #print previousSNP
-                    #print "AF:"
-                    #print previousSNP.iloc[0]['Frequency' + pools[0]]
-                    #print "error count: " + str(errorCount)
-                    if (previousSNP.iloc[0]['Frequency' + pools[1]]  <= threshold) and errorCount < outlierTolerance:
-                        start = previousSNP.iloc[0,1]
-                        errorCount = 0
-                        #print 'correct frequency until ' + str(start)
-                    elif (previousSNP.iloc[0]['Frequency' + pools[1]]  >= threshold) and errorCount < outlierTolerance:
-                        searchPosition = previousSNP
-                        while len(searchPosition.index)>0 and (searchPosition.iloc[0]['Frequency' + pools[1]]  >= threshold) and errorCount < outlierTolerance: # falls der errorCounter noch nicht zu hoch ist wird weiter verlängert
-                            #print 'trying to extend interval to ' + str(searchPosition.iloc[0,1])
-                            #print 'AF ' + str(searchPosition.iloc[0]['Frequency' + pools[0]])
-                            #print 'nextAF ' + str(SNPDataFrame[(SNPDataFrame['Position'] < searchPosition.iloc[0,1])].tail(1).iloc[0]['Frequency' + pools[0]])
-                            if len(SNPDataFrame[(SNPDataFrame['Position'] < searchPosition.iloc[0,1])].index) != 0 and (SNPDataFrame[(SNPDataFrame['Position'] < searchPosition.iloc[0,1])].tail(1).iloc[0]['Frequency' + pools[1]]  <= threshold):
-                                start = searchPosition.iloc[0,1]
-                                break
-
-
-                            searchPosition = SNPDataFrame[(SNPDataFrame['Position'] < searchPosition.iloc[0,1])].tail(1)
-                            errorCount += 1
-                            #print "Error Count"
-                            #print errorCount
-                            
-                        
-                        
-                        if (SNPDataFrame[(SNPDataFrame['Position'] < start)].tail(1).iloc[0]['Frequency' + pools[1]]  <= threshold):
-                            errorCount = 0
-                            #print 'reseting counter'
-                        
-                        
-                    else:
-                        extend = False
-
-                        print 'extended interval:'
-                        print start, end
-                        print 'not extending any further'
-                        
-                        
-                
-
-                intervalLength = int(end) - int(start)
-                if intervalLength < filterIntervalsSmallerThan:
-                       print "filtered Interval"
-                       print str(start) + ", " + str(end)
-                       listOfFilteredIntervals.append((int(start),int(end),int(end)-int(start)))
-                       start = 0
-                       filterCount+=1
-                       i += 1
-                else:
-                       #end = nextSNP.iloc[0,1]
-                       print "appending interval"
-                       listOfIntervals.append((int(start),int(end),int(end)-int(start)))
-                       while  i < len(listOfPutativeStartPositions) and end >= listOfPutativeStartPositions[i]:
-                           #print "leave out starting points that are within the interval"
-                           #print 'end:' + str(end)
-                           #print 'next Start: ' + str(listOfPutativeStartPositions[i])
-                           i += 1
-                       start = 0
-                #print "Interval number: " + str(i)
-                #print "number of starting points: " + str(length)
-
-
-
-
-
-                       
-    print "filtered intervals: "
-    print listOfFilteredIntervals
-    
-    return listOfIntervals, filterCount, listOfFilteredIntervals
-
-    
 
 def nDI(SNPDataFrame,threshold, pools, poolNumber, outlierTolerance, filterIntervalsSmallerThan = int(1000)):
     """ Takes a DataFrame with Variants, and returns a List of the longest stretches of Variants equal to or above the threshold. Es werden erst Startpunkte anhand der deltaAF
 gesucht. Erweitert werden die Intervalle dann so lange, wie die AF des ersten pools stimmt, dieser also nur ein Allel aufweist."""
 
-################Länge der Intervall + 1
     print "searching for intervals"
     # testing if threshold is valid
     if not 0.0 <= threshold and threshold <= 1.0:
@@ -535,33 +174,22 @@ gesucht. Erweitert werden die Intervalle dann so lange, wie die AF des ersten po
                 start = extendIntervalUpstream(SNPDataFrame, start,pool, threshold, outlierTolerance)
                    
                 
-
-                intervalLength = int(end) - int(start)
+######## filtering intervals for size
+                intervalLength = int(end) - int(start) + 1
                 if intervalLength < filterIntervalsSmallerThan:
-                       print "filtered Interval"
-                       print str(start) + ", " + str(end)
-                       listOfFilteredIntervals.append((int(start),int(end),int(end)-int(start)))
+                       # "storing filtered Interval"
+                       listOfFilteredIntervals.append((int(start),int(end),intervalLength))
                        start = 0
                        filterCount+=1
                        i += 1
                 else:
-                       #end = nextSNP.iloc[0,1]
-                       print "appending interval"
-                       listOfIntervals.append((int(start),int(end),int(end)-int(start)))
+                       # "appending interval"
+                       listOfIntervals.append((int(start),int(end),intervalLength))
                        while  i < len(listOfPutativeStartPositions) and end >= listOfPutativeStartPositions[i]:
-                           #print "leave out starting points that are within the interval"
-                           #print 'end:' + str(end)
-                           #print 'next Start: ' + str(listOfPutativeStartPositions[i])
+                           # "skip seeds that overlap the interval"
                            i += 1
                        start = 0
-                #print "Interval number: " + str(i)
-                #print "number of starting points: " + str(length)
 
-
-                      
-    print "filtered intervals: "
-    print listOfFilteredIntervals
-    
     return listOfIntervals, filterCount, listOfFilteredIntervals
 
 
