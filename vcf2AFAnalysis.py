@@ -60,6 +60,14 @@ parser.add_option('-f', '--filteredCSV', dest="filteredCSV", help='if set, the V
 
 
 
+## TODO:
+
+# Größe der Beschriftung der y-ticks anpassen
+# Werte nur einmal aus dem array auslesen und zwischenspeichern zb. positions = chrSNPs['Position']
+# filter fuer kollabierte Bereiche: Zusammenhanegende Bereiche, deren Coverage zu hoch , aber deren AF zu niedrig ist rausfiltern
+
+
+
 ### Usage examples:
 # -d only -w 1000 , only plot a rolling men for the delta values
 # -d only -w 1000 -p green,red -v 360Acc.vcf -V 120Acc.vcf, plot the rolling mean for the delta values of two experiments, that have the same pools, but might differ in other parameters, like coverage or accessions used. 
@@ -386,7 +394,6 @@ for Chr in Chrs: # make one plot for each chromosome
                                     print "Testing threshold: " + str(threshold)
                                     for outlierTolerance in range(1,3):
                                             print "and outlier Tolerance of: " + str(outlierTolerance)
-                                            #intervals, filterCount, filteredIntervals = naiveDefineIntervals(chrSNPs,  threshold, pools, outlierTolerance)
                                             intervals1, filterCount1, filteredIntervals1 = nDI(chrSNPs,  threshold, pools, 0, outlierTolerance, minLengthOfInterval)
                                             intervals2, filterCount2, filteredIntervals2 = nDI(chrSNPs,  threshold, pools, 1, outlierTolerance, minLengthOfInterval)
                                             intervals = intervals1 + intervals2
@@ -399,7 +406,6 @@ for Chr in Chrs: # make one plot for each chromosome
                                             break
                             if len(intervals) >0:
                                     print 'Found ' + str(len(intervals)) + ' intervals with threshold ' + str(threshold) + ' and outlier tolerance ' + str(outlierTolerance)
-                                    #print intervals
                                     print str(len(intervals1)) + ' intervals for pool ' + pools[0]
                                     print str(len(intervals2)) + ' intervals for pool ' + pools[1]
                                     print 'Length of intervals: ' + str(sum(tup[2] for tup in intervals))
@@ -471,14 +477,13 @@ for Chr in Chrs: # make one plot for each chromosome
 
                   
 
-print 'labels: '
-print labels
+
 
 
 
 ## adjusting the subplots according to the length of the Chromosome
 
-start = 0.08
+start = 0.12 # leave space for the ylabel
 plot_end = 0.85
 left = start
 for subplots in range(len(chrsToPlot)):
@@ -495,11 +500,14 @@ for subplots in range(len(chrsToPlot)):
 	start, end = ax.get_xlim()
 	if len(chrsToPlot) < 3:
 		print "Using standard ticks"
+		ax.xaxis.set_ticks(numpy.arange(start, end, 10000000))
+		ax.set_xlabel(chrsToPlot[subplots], fontsize = 15)
 		
 	else:
-		ax.xaxis.set_ticks(numpy.arange(start, end, 1000000))
+                print "adjusting x-ticks and labels"
+		ax.xaxis.set_ticks(numpy.arange(start, end, 10000000))
 			# rotate the label of the axes
-		ax.set_xlabel(chrsToPlot[subplots],rotation=45)
+		ax.set_xlabel(chrsToPlot[subplots],rotation=45, fontsize = 12)
 	
 	
 	# Abmessungen des subplots bestimmen, 
@@ -537,8 +545,6 @@ for subplots in range(len(chrsToPlot)):
                             else:
                                 n, bons, patches  = ax.hist([chrSNPs['Frequency'+pools[0]]], bins=bins, orientation='horizontal', alpha=0.5)
 
- #                       else:
-  #                             chrSNPs = filterDataFrameForChromosome(df_SNPs,chrsToPlot[0])
 
 
 
@@ -551,15 +557,12 @@ for key,value in labels.items():
 locs, labels2 = plt.xticks()
 if len(labels_list)>1:
     plt.setp(labels2, rotation=45)
-#ax.set_ylabel('delta allele frequency estimate')
-#plt.yaxis.set_label_position("right")
-plt.tick_params(axis='y', which='both', labelleft='off', labelright='on')
-plt.ylabel('delta allele frequency estimate', fontsize=15)
 
-print 'labels_list: '
-print labels_list
-print 'labels_names '
-print labels_names
+ax = listOfAxes[0]
+ax.set_ylabel('delta allele frequency estimate', fontsize=15)
+plt.tick_params(axis='y', labelsize = 13)
+
+plt.tick_params(axis='x', labelsize=13)
         
 fig.legend(labels_names, labels_list, 'upper center', ncol = 3, shadow = False)
 
@@ -575,7 +578,7 @@ if options.batch == False:
 
 ###save plot
 fig.set_size_inches(7,5)
-fig.savefig('test.png', dpi=300)
+fig.savefig(Path2OutputFile, dpi=300)
 #save_plot(fig, Path2OutputFile, dpi=300) # speichert den plot so, wie man ihn sieht
 
 
@@ -583,7 +586,3 @@ Statisticsfile.close()
 
 
 
-## TODO:
-
-# Werte nur einmal aus dem array auslesen und zwischenspeichern zb. positions = chrSNPs['Position']
-# filter fuer kollabierte Bereiche: Zusammenhanegende Bereiche, deren Coverage zu hoch , aber deren AF zu niedrig ist rausfiltern
