@@ -40,7 +40,7 @@ parser.add_option('-V', '--vcf2', dest="vcffile2", type="string", help='vcf file
 parser.add_option('-g', '--genes_gff', dest="genes_gff", type="string", help='path to genes_gff file, containing genes to plot. Introns and exons will be plotted. This can be very timeconsuming for large files.')
 parser.add_option('-G', '--gff', dest="gff", type="string", help='path to generic file [chr, startpos, endpos] to plot as intervals')
 parser.add_option('-w', '--windowSize', dest="windowSize", type="int", help='the genomic length to calculate the rolling mean for. Step size is len/2. The rolling mean of the allele frequency will be calculated for both/all pools by default. if the -d option is set to "only", only the rolling mean of the delta allele frequenvy will be plotted.')
-parser.add_option('-c', '--chromosomes', dest="Chrs", type="string", default="all", help='the Chromosomes to plot, delimited by ",", default is "all"')
+parser.add_option('-c', '--chromosomes', dest="Chrs", type="string", default="all", help='the Chromosomes to plot, delimited by ",", default is "all". Specifying a list of chromosomes, will speed up processing significantly, because only nescessary data is read, and the chromosome determination step is skipped.')
 parser.add_option('-p', '--pools', dest="pools", type="string", help='the sequenced pools, in the same order as in the SNPs file, delimited by ",". Most functions are only available for two pools.')
 parser.add_option('-P', '--proportional', dest="proportional", type="float", help='the level of allelefrequency for which SNPs must be proportional. For visualization.')
 parser.add_option('-o', '--output', dest="output", type="string", help='Output filename. If not set, an automatic name will be generated', default=False)
@@ -62,7 +62,6 @@ parser.add_option('-f', '--filteredCSV', dest="filteredCSV", help='if set, the V
 
 ## TODO:
 
-# Größe der Beschriftung der y-ticks anpassen
 # Werte nur einmal aus dem array auslesen und zwischenspeichern zb. positions = chrSNPs['Position']
 # filter fuer kollabierte Bereiche: Zusammenhanegende Bereiche, deren Coverage zu hoch , aber deren AF zu niedrig ist rausfiltern
 
@@ -199,26 +198,27 @@ if options.errorfile:
 
 ### check if SNP file exists, else create it
 path_SNPs = checkOrCreateSNPfile(path_VCF)
+
+
+
 ### read in and filter variants
-
-
-
-
 if options.low_mem == True:
     df_SNPs, Chrs = readAndFilterVariants(path_SNPs, pools, df_Markers, df_Errors, Chrs, noninformative, coverage, proportional, Path2StatisticsFile, low_memory = True)
 else:
     df_SNPs, Chrs = readAndFilterVariants(path_SNPs, pools, df_Markers, df_Errors, Chrs, noninformative, coverage, proportional, Path2StatisticsFile)
 
+
+### saving filtered SNPs to disk
 if options.filteredCSV:
-    df_SNPs.to_csv(Path2OutputFile + "filtered_SNPS.csv", sep='\t', index=False)
+    df_SNPs.to_csv(Path2OutputFile + "_filtered_SNPS.csv", sep='\t', index=False)
 
 if options.vcffile2:
     path_VCF2 = options.vcffile2
     path_SNPs2 = checkOrCreateSNPfile(path_VCF2)
     df_SNPs2, Chrs2 = readAndFilterVariants(path_SNPs2, pools, df_Markers, df_Errors, Chrs, noninformative, coverage, proportional, Path2StatisticsFile)
     options.delta = 'only'
-if options.filteredCSV:
-    df_SNPs.to_csv(Path2OutputFile + "filtered_SNPS2.csv", sep='\t', index=False)
+	if options.filteredCSV:
+    		df_SNPs.to_csv(Path2OutputFile + "_filtered_SNPS2.csv", sep='\t', index=False)
 
 
 

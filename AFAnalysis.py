@@ -19,7 +19,6 @@ import matplotlib.pyplot as plt
 # scaffoldenden plotten von agp (als punkte)
 
 
-"""" This script is mainly intended to filter and plot the allelefrequencies of two pools. If you have the parents sequenced use the Script SNVerSNPs2AFAnalysis_parents.py """
 
 
 def extendIntervalDownstream(SNPDataFrame, position, pool, threshold, outlierTolerance):
@@ -30,8 +29,6 @@ def extendIntervalDownstream(SNPDataFrame, position, pool, threshold, outlierTol
 # extend downstream
     extend = True
     errorCount = 0            
-    print "extend downstream"
-
 
     while extend == True:
                     nextSNP = SNPDataFrame[(SNPDataFrame['Position'] > end)].head(1)
@@ -62,7 +59,7 @@ def extendIntervalDownstream(SNPDataFrame, position, pool, threshold, outlierTol
                     else:
                         extend = False
                         
-                        print 'not extending any further'
+
     return end                        
 
 
@@ -74,7 +71,7 @@ def extendIntervalUpstream(SNPDataFrame, position, pool, threshold, outlierToler
      #extend upstream
                 extend = True
                 errorCount = 0
-                print "extend upstream"
+
 
 
                 while extend == True:
@@ -113,7 +110,6 @@ def extendIntervalUpstream(SNPDataFrame, position, pool, threshold, outlierToler
                         
                     else:
                         extend = False
-                        print 'not extending any further'
  
                 return start
 
@@ -149,7 +145,6 @@ gesucht. Erweitert werden die Intervalle dann so lange, wie die AF des ersten po
 
     pool = pools[poolNumber]
     print "calculating intervals for pool " + pool
-    print listOfPutativeStartPositions
 
 
     if len(listOfPutativeStartPositions) > 0:
@@ -164,7 +159,6 @@ gesucht. Erweitert werden die Intervalle dann so lange, wie die AF des ersten po
         while i < length: # as long as there are still seeds to check
             if start == 0: # initialising new search
                 start = listOfPutativeStartPositions[i]
-                print "seed position: " + str(start)
                 end = start
                 errorCount = 0
             else:
@@ -193,6 +187,7 @@ gesucht. Erweitert werden die Intervalle dann so lange, wie die AF des ersten po
     return listOfIntervals, filterCount, listOfFilteredIntervals
 
 
+### ToDo In einen plot, effizienter
 def plotIntervals(chromosome, listOfIntervals, ax, color = 'm'):
     for interval in listOfIntervals:
             start, end, length = interval
@@ -234,6 +229,7 @@ def gff2ExonList(lines):
                
         return list_of_genes
                
+### ToDo in einen plot, effizienter
 def plotExonList(list_of_genes, ax):
         print "plotting exons"
         for gene in list_of_genes:
@@ -261,13 +257,12 @@ def plotgff(gff_file, Chr, ax):
             line = line.split()
             ax.plot([int(line[3]), int(line[4])],[-0.1,-0.1],'m.-')
 
-
-
-
-
     filehandle.close()
     return
 
+
+
+### erweitern für agp file
 def makeListOfContigPositions(contigFile, Ns, Chr):
         """Chromosomal References are normally put together by adding up all scaffolds and contigfs in the (presumably)
         right order, adding a defined number of Ns inbetween.  This script calculates, given a list of contigs in fasta format, and depending on the
@@ -291,10 +286,10 @@ def makeListOfContigPositions(contigFile, Ns, Chr):
         return contigPos         
 
 
-def readSNVerSNPfile2dataFrame(path, namesOfPools, chromosome = 'None'):
+def readSNVerSNPfile2dataFrame(path, namesOfPools, chromosome = 'all'):
         """reads in the tabdelimited txt file containing the SNPs and returns a dataframe. This file has to be created out of SNVer output using SNVer2SNP.py. The names of the pools have to be provided
-        as a list in the right order (same order aas in the file which is to be read in). The returned dataframe object can be large, since the whole data is stored and only later
-        filtered for chromosomes, so you might consider prefiltering your input file for the chromosomes you want to analyze. If low-memory mode is active, Only one chromosome at a time is read in, resulting in less memory
+        as a list in the right order (same order as in the file which is to be read in). The returned dataframe object can be large, since the whole data is stored and only later
+        filtered for chromosomes, so you might consider prefiltering your input file for the chromosomes you want to analyze. If a list of specified chromosomes is given, Only one chromosome at a time is read in, resulting in less memory
         requirement, but slower processing"""
         # defining how many columns have to be read in, and their datatypes
         names = ['Chromosome', 'Position', 'Ref', 'Alt'] # Standard fields
@@ -324,7 +319,7 @@ def readSNVerSNPfile2dataFrame(path, namesOfPools, chromosome = 'None'):
 #        from IPython import embed
 #        embed()
 	
-	if chromosome == 'None' or chromosome == 'all':
+	if chromosome == 'all':
             dataFrame = pandas.DataFrame(numpy.loadtxt(filehandle, dtype={'names': names,'formats': formats},usecols=cols))
         else: # reading in chunkwise, filtering each chunk for the desired chromosome
             iter_txt = pandas.read_table(filehandle, dtype={'names': names,'formats': formats}, usecols=cols, iterator=True, chunksize=1000, header = 0 , names = names)
@@ -386,7 +381,7 @@ def checkOrCreateSNPfile(path_VCF):
 
 
 def overlapPositions(df_SNPs1, df_SNPs2):
-	"""takes two dataframes with Variations. Returns the Variations common two both dataframes. """
+	"""takes two dataframes with Variations. Returns the Variations common to both dataframes. """
 	print "Finding overlap of dataframes"
 #	df_SNPs = df_SNPs.join(df_Markers, how='inner', on=['Chromosome', 'Position'])
 #	df_SNPs = pandas.concat([df_SNPs, df_Markers], join='inner').groupby(['Chromosome', 'Position'], as_index=False)
@@ -418,7 +413,7 @@ def movingAverageOverDataPoints(interval, window_size):
     	window = numpy.ones(int(window_size))/float(window_size)
     	return numpy.convolve(interval, window, 'same')	
 		
-		
+#### bottleneck ist die size bestimmung der dataframes, das geht doch schneller über index und index.len
 def movingAverageOverWindow(dataFrameChr, windowSize, stepSize): # for snp density # langsam, da der dataframe fuer jedes window nach positionen gefiltert wird # bottleneck im ganzen tool. entweder positionen als index nutzen, oder die endposition des letzten filterns merken und als start fuer das naechste nutzen? 
 	'''Sliding Window over a region of windowSize, with a stepSize. windowSize 20000 means a chromosomal part of size 20kb. Returns a list of the number of datapoints in each interval, and the middle point of the interval.
 the return values are a list of numbers of snps per interval, and a correlating list of positions, which mark the middle points
