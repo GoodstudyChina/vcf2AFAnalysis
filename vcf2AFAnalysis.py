@@ -47,7 +47,7 @@ parser.add_option('-o', '--output', dest="output", type="string", help='Output f
 parser.add_option('-x', '--coverage', dest="coverage", type="int", help='Coverage to filter for (coverage > x > coverage*3), "0" for automatic. The automatic filter will filter each chromosome seperately for (medianCoverage*0.75) > X > (medianCoverage*2.25)')
 parser.add_option('-m', '--mean', dest="mean", help='plot mean', action="store_true")
 parser.add_option('-L', '--low_mem', dest="low_mem", help='activate low-memory mode. This will use less memory, and make the script slower, but you will not get statistics about the whole dataset', action="store_true")
-parser.add_option('-K', '--contigfile', dest="contigfile", type="string", help='file containing contigpositions, *.fna', default=False)
+parser.add_option('-K', '--contigfile', dest="contigfile", type="string", help='file containing contigpositions, .fna or .agp', default=False)
 parser.add_option('-M', '--Markerfile', dest="markerfile", type="string", help='file containing Markerpositions. Chromosomename in the first column, Position in the second.', default=False)
 parser.add_option('-E', '--Errorfile', dest="errorfile", type="string", help='file containing Errorpositions. Chromosomename in the first column, Position in the second.', default=False)
 parser.add_option('-H', '--Histogram', dest="histogram", help='plot a AF Histogram', action="store_true", default=False)
@@ -343,18 +343,19 @@ for Chr in Chrs: # make one plot for each chromosome
                         
 
             if options.contigfile:
-				# plotting contigs
-				if options.contigfile().endswith('.agp'):
-					ContigPositions = makeListOfContigPositionsAGP(options.contigfile(), Chr)
-				elif options.contigfile().endswith('.fna'):
-					ContigPositions = makeListOfContigPositions(options.contigfile(), Ns , Chr)
-				else:
-					print 'contigfile must end in .agp or .fna'
-					print 'not plotting contigs'
-					break
+		# plotting contigs
+		if options.contigfile.endswith('.agp'):
+			ContigPositions = makeListOfContigPositionsAGP(options.contigfile, Chr)
+		elif options.contigfile.endswith('.fna'):
+			ContigPositions = makeListOfContigPositions(options.contigfile, Ns , Chr)
+		else:
+			print 'contigfile must end in .agp or .fna'
+			print 'not plotting contigs'
+			break
                 for contig in ContigPositions:
-                	x1,x2 = contig
-                    labels['contigs'], = ax.plot([x1,x2],[0,1],"b-.", label="contigs", lw = 0.5)
+                    start,end = contig
+                    # better use vlines
+                    labels['contigs'], = ax.plot([start,start],[0,1],"b", label="contigs", lw = 2.0)
 
             if options.genes_gff:
                 #import pdb

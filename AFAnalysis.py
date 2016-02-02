@@ -262,7 +262,7 @@ def plotgff(gff_file, Chr, ax):
 
 
 
-### erweitern für agp file
+
 def makeListOfContigPositions(contigFile, Ns, Chr):
         """Chromosomal References are normally put together by adding up all scaffolds and contigfs in the (presumably)
         right order, adding a defined number of Ns inbetween.  This script calculates, given a list of contigs in fasta format, and depending on the
@@ -291,13 +291,13 @@ def makeListOfContigPositionsAGP(agpFile, Chr):
 BmChr1  1       1291    1       W       C17262807       1       1291    +
 BmChr1  1292    1341    2       N       50      scaffold        yes     paired-ends
 """
-        f = open(os.path.abspath(contigFile),"r")
+        f = open(os.path.abspath(agpFile),"r")
 
         contigPos = []
         count =0
 
         for line in f:
-			line = line.strip().split()
+            line = line.strip().split()
             if line[0] == Chr and line[6] != 'scaffold': # only read data for Chr.  
                 start = line[1]
                 end = line[2]
