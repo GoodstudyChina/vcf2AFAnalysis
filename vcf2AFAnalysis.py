@@ -268,9 +268,8 @@ for Chr in Chrs: # make one plot for each chromosome
             
             
             first_SNPs.append(chrSNPs['Position'].irow(0)) # save the length of the Chromosome   
-            
             last_SNPs.append(chrSNPs['Position'].irow(-1)) # save the length of the Chromosome   
-            print chrSNPs.describe()
+
 
             Statisticsfile = open(Path2StatisticsFile, 'w')	
             Statisticsfile.write('filtering for Chromosome: ' + Chr + " \n")
@@ -335,12 +334,18 @@ for Chr in Chrs: # make one plot for each chromosome
                         
 
             if options.contigfile:
-                
-                # plotting contigs
-                        ContigPositions = makeListOfContigPositions(options.contigfile(), Ns , Chr)
-                        for contig in ContigPositions:
-                                x1,x2 = contig
-                                labels['contigs'], = ax.plot([x1,x2],[0,1],"b-.", label="contigs", lw = 0.5)
+				# plotting contigs
+				if options.contigfile().endswith('.agp'):
+					ContigPositions = makeListOfContigPositionsAGP(options.contigfile(), Chr)
+				elif options.contigfile().endswith('.fna'):
+					ContigPositions = makeListOfContigPositions(options.contigfile(), Ns , Chr)
+				else:
+					print 'contigfile must end in .agp or .fna'
+					print 'not plotting contigs'
+					break
+                for contig in ContigPositions:
+                	x1,x2 = contig
+                    labels['contigs'], = ax.plot([x1,x2],[0,1],"b-.", label="contigs", lw = 0.5)
 
             if options.genes_gff:
                 #import pdb

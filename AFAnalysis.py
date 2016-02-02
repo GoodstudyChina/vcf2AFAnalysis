@@ -285,6 +285,28 @@ def makeListOfContigPositions(contigFile, Ns, Chr):
         print  str(count) + ' contigs for '  + Chr +  ' read'
         return contigPos         
 
+def makeListOfContigPositionsAGP(agpFile, Chr):
+        """Chromosomal References are normally put together by adding up all scaffolds and contigfs in the (presumably)
+        right order, adding a defined number of Ns inbetween. The function reads an agp file and returns the start and end positions of every contig as a list of tupels [(start, end),...]. The function will read the file again for each Chromosome, which is okay, because agp files are typically small.
+BmChr1  1       1291    1       W       C17262807       1       1291    +
+BmChr1  1292    1341    2       N       50      scaffold        yes     paired-ends
+"""
+        f = open(os.path.abspath(contigFile),"r")
+
+        contigPos = []
+        count =0
+
+        for line in f:
+			line = line.strip().split()
+            if line[0] == Chr and line[6] != 'scaffold': # only read data for Chr.  
+                start = line[1]
+                end = line[2]
+                contigPos.append((start,end))
+                count += 1
+       
+        print  str(count) + ' contigs for '  + Chr +  ' read'
+        return contigPos         
+
 
 def readSNVerSNPfile2dataFrame(path, namesOfPools, chromosome = 'all'):
         """reads in the tabdelimited txt file containing the SNPs and returns a dataframe. This file has to be created out of SNVer output using SNVer2SNP.py. The names of the pools have to be provided
