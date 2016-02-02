@@ -175,6 +175,10 @@ if options.markerfile:
 		print "Markerfile read:"
 		print df_Markers.describe()
 		print df_Markers.head()
+                Statisticsfile.write("Using Markerfile:" + "\n")
+                Statisticsfile.write(df_Markers.describe())
+                Statisticsfile.write( "\n")
+
 	elif os.stat(path_Markerfile)[6]==0:
 		print "Markerfile is empty"
 	else:
@@ -188,6 +192,10 @@ if options.errorfile:
 		print "Errorfile read:"
 		print df_Errors.describe()
 		print df_Errors.head()
+                Statisticsfile.write("Using Errorfile:" + "\n")
+                Statisticsfile.write(df_Errors.describe())
+                Statisticsfile.write( "\n")
+
 	elif os.stat(path_Errorfile)[6]==0:
 		print "Errorfile is empty"
 	else:
@@ -217,8 +225,8 @@ if options.vcffile2:
     path_SNPs2 = checkOrCreateSNPfile(path_VCF2)
     df_SNPs2, Chrs2 = readAndFilterVariants(path_SNPs2, pools, df_Markers, df_Errors, Chrs, noninformative, coverage, proportional, Path2StatisticsFile)
     options.delta = 'only'
-	if options.filteredCSV:
-    		df_SNPs.to_csv(Path2OutputFile + "_filtered_SNPS2.csv", sep='\t', index=False)
+    if options.filteredCSV:
+    	df_SNPs.to_csv(Path2OutputFile + "_filtered_SNPS2.csv", sep='\t', index=False)
 
 
 
@@ -244,6 +252,8 @@ last_SNPs=[]
 labels = {}
 listOfAxes=[] # list in which all axis are saved
 chrsToPlot = []
+
+Statisticsfile = open(Path2StatisticsFile, 'w')	
 
 for Chr in Chrs: # make one plot for each chromosome
 
@@ -272,9 +282,8 @@ for Chr in Chrs: # make one plot for each chromosome
             last_SNPs.append(chrSNPs['Position'].irow(-1)) # save the length of the Chromosome   
             print chrSNPs.describe()
 
-            Statisticsfile = open(Path2StatisticsFile, 'w')	
             Statisticsfile.write('filtering for Chromosome: ' + Chr + " \n")
-            Statisticsfile.write(str(chrSNPs.describe())+ " \n")
+            Statisticsfile.write(str(chrSNPs.describe())+ " \n\n")
 
             for pool in pools: # for each pool, the trianglesmoothed frequencies should be plotted
 
@@ -308,12 +317,12 @@ for Chr in Chrs: # make one plot for each chromosome
         # plotting delta values
             print "delta: " + str(options.delta)
             if options.delta == 'True' or options.delta == 'only':
-                plot_delta(chrSNPs, options.windowSize, pools, ax, labels, boost_flag = options.boost)
+                deltaValues = plot_delta(chrSNPs, options.windowSize, pools, ax, labels, boost_flag = options.boost)
 
-        ##		Statisticsfile.write('mean delta: ' + Chr + " \n")
-        ##		Statisticsfile.write(str(numpy.mean(deltaValues))+ " \n")
-        ##		Statisticsfile.write(str(numpy.std(deltaValues))+ " \n")
-        ##	
+		Statisticsfile.write('mean delta: ' + Chr + " \n")
+		Statisticsfile.write(str(numpy.mean(deltaValues))+ " \n")
+		Statisticsfile.write(str(numpy.std(deltaValues))+ " \n\n")
+        	
             elif options.windowSize: # if there is no delta, plot the moving average for the pools
                           plotMovingAverage(chrSNPs, pools, windowSize, ax, labels)
 
@@ -359,35 +368,9 @@ for Chr in Chrs: # make one plot for each chromosome
 
             if options.interval:
 
-##                    threshold = 0.1
-##                    #pool = "green"
-##                    outlierTolerance = 1
-##                    minLengthOfInterval = options.interval
-##                    intervals, filterCount, filteredIntervals = naiveDefineIntervals(chrSNPs,  threshold, pools, outlierTolerance, minLengthOfInterval)
-##                    intervals1, filterCount1, filteredIntervals1 = nDI(chrSNPs,  threshold, pools, 0, outlierTolerance, minLengthOfInterval)
-##                    intervals2, filterCount2, filteredIntervals2 = nDI(chrSNPs,  threshold, pools, 1, outlierTolerance, minLengthOfInterval)
-##                    newInt= intervals2 + intervals3
-##                    intervals == newInt
-##                    
-##
-##
-##                    
-##                    if len(intervals) > 0:
-##                            print 'Found ' + str(len(intervals)) + ' intervals with threshold ' + str(threshold) + ' and outlier tolerance ' + str(outlierTolerance)
-##                            print intervals
-##                            print 'Length of intervals: ' + str(sum(tup[2] for tup in intervals))
-##                            Statisticsfile.write('Found intervals with threshold ' + str(threshold) + ' and outlier tolerance ' + str(outlierTolerance)+ " \n")
-##                            Statisticsfile.write(str(intervals)+ " \n")
-##                            Statisticsfile.write('Length of intervals: ' + str(sum(tup[2] for tup in intervals))+ " \n")
-##                            Statisticsfile.write('Filtered ' + str(filterCount) + ' intervals, with length: ' + str(sum(tup[2] for tup in filteredIntervals))+ " \n")
-##                            Statisticsfile.write(str(filteredIntervals)+ " \n")
-##                            
-
-
-
-                    
-                            #print 'no Intervals found'
                             print 'starting iterative Interval search'
+                            Statisticsfile.write('Interval search for ' + Chr +" \n" )
+
                             minLengthOfInterval = options.interval
                             for threshold in range(10,30,5):
                                     threshold = threshold /100.
@@ -418,7 +401,7 @@ for Chr in Chrs: # make one plot for each chromosome
 
                                     
                                     Statisticsfile.write('Found intervals with threshold ' + str(threshold) + ' and outlier tolerance ' + str(outlierTolerance)+ " \n")
-                                    Statisticsfile.write(str(len(intervals2)) + ' intervals for pool ' + pools[1])
+                                    Statisticsfile.write(str(len(intervals2)) + ' intervals for pool ' + pools[1] + "\n")
                                     Statisticsfile.write(str(intervals2)+ " \n")
                                     Statisticsfile.write('Length of intervals: ' + str(sum(tup[2] for tup in intervals2))+ " \n")
                                     Statisticsfile.write('Filtered ' + str(filterCount2) + ' intervals, with length: ' + str(sum(tup[2] for tup in filteredIntervals2))+ " \n")
@@ -499,12 +482,12 @@ for subplots in range(len(chrsToPlot)):
 	# modify the ticks 
 	start, end = ax.get_xlim()
 	if len(chrsToPlot) < 3:
-		print "Using standard ticks"
+		#"Using standard ticks"
 		ax.xaxis.set_ticks(numpy.arange(start, end, 10000000))
 		ax.set_xlabel(chrsToPlot[subplots], fontsize = 15)
 		
 	else:
-                print "adjusting x-ticks and labels"
+                #"adjusting x-ticks and labels"
 		ax.xaxis.set_ticks(numpy.arange(start, end, 10000000))
 			# rotate the label of the axes
 		ax.set_xlabel(chrsToPlot[subplots],rotation=45, fontsize = 12)

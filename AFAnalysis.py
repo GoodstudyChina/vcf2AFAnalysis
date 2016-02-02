@@ -754,9 +754,8 @@ def plot_delta(chrSNPs, windowSize, pools, ax, labels,  color = "y", labelname =
                     labels[deltaIndex], = ax.plot(chrSNPs['Position'], deltaValues, "."+color, label = labelname )
                     print "plotted delta values"    
 
-            del deltaValues
             del deltaDf
-            return 
+            return deltaValues
 
 
 
