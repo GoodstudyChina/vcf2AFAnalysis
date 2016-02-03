@@ -423,19 +423,19 @@ for Chr in Chrs: # make one plot for each chromosome
                                 
                             print 'Number of filtered Intervals: ' + str(filterCount1 + filterCount2)
 
-                            if pool[0] in poolcolors:
-                                color1 = poolcolors[pool[0]]
+                            if pools[0] in poolcolors:
+                                color1 = poolcolors[pools[0]]
                             else:
                                 color1 = 'm'
 
-                            if pool[1] in poolcolors:
-                                color2 = poolcolors[pool[1]]
+                            if pools[1] in poolcolors:
+                                color2 = poolcolors[pools[1]]
                             else:
                                 color2 = 'r'
                             
                                 
-                            labels['intervals ' + pool[0]], = plotIntervals(Chr, intervals1, ax, color1)
-                            labels['intervals ' + pool[1]], = plotIntervals(Chr, intervals2, ax, color2)
+                            labels['intervals ' + pools[0]], = plotIntervals(Chr, intervals1, ax, color1)
+                            labels['intervals ' + pools[1]], = plotIntervals(Chr, intervals2, ax, color2)
                     
 
         
