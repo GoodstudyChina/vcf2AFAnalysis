@@ -376,7 +376,7 @@ for Chr in Chrs: # make one plot for each chromosome
             if options.gff:
                     plotgff(options.gff, Chr, ax)
 
-            if options.interval:
+            if options.interval and len(pools) > 1:
 
                             print 'starting iterative Interval search'
                             Statisticsfile.write('Interval search for ' + Chr +" \n" )
