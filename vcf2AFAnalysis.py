@@ -285,6 +285,7 @@ for Chr in Chrs: # make one plot for each chromosome
             Statisticsfile.write(str(chrSNPs.describe())+ " \n\n")
 
             poolcolors = {}
+            colors = "bgrcmykw"
             for pool in pools: # for each pool, the trianglesmoothed frequencies should be plotted
 
                     if 'red' in pool:
@@ -294,7 +295,7 @@ for Chr in Chrs: # make one plot for each chromosome
                             color = 'g'
                             poolcolors[pool] = {color}
                     else:
-                            color = mpl.rcParams['axes.color_cycle'][pools.index(pool)]
+                            color = colors[pools.index(pool)]
                             poolcolors[pool] = {color}
                     if options.delta == 'only':
                             continue   # don't plot SNPs
@@ -572,7 +573,7 @@ plt.tick_params(axis='y', labelsize = 13)
 
 plt.tick_params(axis='x', labelsize=13)
         
-fig.legend(labels_names, labels_list, 'upper center', ncol = 3, shadow = False)
+fig.legend(labels_names, labels_list, 'best', ncol = 1, shadow = False, scatterpoints = 1)
 
 ### clear memory
 del chrSNPs
