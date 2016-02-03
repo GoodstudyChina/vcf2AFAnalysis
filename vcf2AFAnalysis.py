@@ -284,14 +284,18 @@ for Chr in Chrs: # make one plot for each chromosome
             Statisticsfile.write('filtering for Chromosome: ' + Chr + " \n")
             Statisticsfile.write(str(chrSNPs.describe())+ " \n\n")
 
+            poolcolors = {}
             for pool in pools: # for each pool, the trianglesmoothed frequencies should be plotted
 
                     if 'red' in pool:
                             color = 'r'
+                            poolcolors[pool] = {color}
                     elif 'green' in pool:
                             color = 'g'
+                            poolcolors[pool] = {color}
                     else:
                             color = mpl.rcParams['axes.color_cycle'][pools.index(pool)]
+                            poolcolors[pool] = {color}
                     if options.delta == 'only':
                             continue   # don't plot SNPs
                     else:
@@ -300,7 +304,7 @@ for Chr in Chrs: # make one plot for each chromosome
      #               xnew,ynew = splineCurveFit(chrSNPs['Position'],smoothTriangle(chrSNPs['Frequency'+pool],3))
     #                labels[pool + 'fitted data'],=plt.plot(xnew,ynew,'-.'+color,label='fitted data' + pool)
 
-
+            
 
             plt.xlabel(Chr) # name the x axis of the subplot after the chromosome
             if len(Chrs) >1 :
@@ -418,9 +422,20 @@ for Chr in Chrs: # make one plot for each chromosome
                                     print 'No intervals could be found'
                                 
                             print 'Number of filtered Intervals: ' + str(filterCount1 + filterCount2)
-                                                                
-                            plotIntervals(Chr, intervals1, ax)
-                            plotIntervals(Chr, intervals2, ax, color = 'g')
+
+                            if pool[0] in poolcolors:
+                                color1 = poolcolors[pool[0]]
+                            else:
+                                color1 = 'm'
+
+                            if pool[1] in poolcolors:
+                                color2 = poolcolors[pool[1]]
+                            else:
+                                color2 = 'r'
+                            
+                                
+                            labels['intervals ' + pool[0]], = plotIntervals(Chr, intervals1, ax, color1)
+                            labels['intervals ' + pool[1]], = plotIntervals(Chr, intervals2, ax, color2)
                     
 
         

@@ -584,14 +584,16 @@ def filterDataFrameForNoneInformativeSNPs(dataFrame, noninformativeCutOff):
         return dataFrame
 
 def filterZeros(dataFrame):
-        '''removes als variants that have 0 allelefrequency in both pools, and are thus noninformative'''
+        '''removes all variants that have 0 allelefrequency in both pools, and are thus noninformative'''
         frequencycolumns = []
         for column in dataFrame.columns.tolist():
                 if 'Frequency' in column: # select columns that contain the word frequency
                         frequencycolumns.append(column)
 
-        
-        dataFrame[(dataFrame[frequencycolumns[0]] != 0) & (dataFrame[frequencycolumns[1]] != 0.0)]
+        if len(frequencycolumns) == 2:
+            dataFrame[(dataFrame[frequencycolumns[0]] != 0) & (dataFrame[frequencycolumns[1]] != 0.0)]
+        else:
+            print 'Number of pools does not equal 2. Skipping filter for zero allelefrequency.'
         return dataFrame	
 
 
