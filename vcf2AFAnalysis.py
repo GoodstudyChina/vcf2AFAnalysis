@@ -423,6 +423,7 @@ for Chr in Chrs: # make one plot for each chromosome
                                 
                             print 'Number of filtered Intervals: ' + str(filterCount1 + filterCount2)
 
+                            print poolcolors
                             if pools[0] in poolcolors:
                                 color1 = poolcolors[pools[0]]
                             else:
@@ -432,7 +433,9 @@ for Chr in Chrs: # make one plot for each chromosome
                                 color2 = poolcolors[pools[1]]
                             else:
                                 color2 = 'r'
-                            
+
+                            print color1
+                            print color2
                                 
                             labels['intervals ' + pools[0]], = plotIntervals(Chr, intervals1, ax, color1)
                             labels['intervals ' + pools[1]], = plotIntervals(Chr, intervals2, ax, color2)
@@ -474,7 +477,7 @@ for Chr in Chrs: # make one plot for each chromosome
             if Chrs.index(Chr) >= 1: # don't plot y axis for subplots
                     ax.set_yticklabels([])
 
-        # plotting delta values
+        # plotting delta values TODO::::::
             plot_delta(chrSNPs1, options.windowSize, pools, ax, labels,  "y", "delta frequencies 360 Acc" ,  "delta 360 Acc", boost_flag = options.boost)
             plot_delta(chrSNPs2, options.windowSize, pools, ax, labels,  "b", "delta frequencies  120 Acc" ,  "delta 120 Acc", boost_flag = options.boost)
                          
@@ -504,7 +507,7 @@ for subplots in range(len(chrsToPlot)):
 	start, end = ax.get_xlim()
 	if len(chrsToPlot) < 3:
 		#"Using standard ticks"
-		ax.xaxis.set_ticks(numpy.arange(start, end, 10000000))
+		ax.xaxis.set_ticks(numpy.arange(start, end, 1000000))
 		ax.set_xlabel(chrsToPlot[subplots], fontsize = 15)
 		
 	else:
@@ -563,7 +566,8 @@ if len(labels_list)>1:
     plt.setp(labels2, rotation=45)
 
 ax = listOfAxes[0]
-ax.set_ylabel('delta allele frequency estimate', fontsize=15)
+if options.delta:
+    ax.set_ylabel('delta allele frequency estimate', fontsize=15)
 plt.tick_params(axis='y', labelsize = 13)
 
 plt.tick_params(axis='x', labelsize=13)
