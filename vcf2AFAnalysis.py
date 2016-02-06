@@ -437,19 +437,27 @@ for Chr in Chrs: # make one plot for each chromosome
                                 
                             print 'Number of filtered Intervals: ' + str(filterCount1 + filterCount2)
 
+
+##### assigning color of the interval plots according to the color of the pools
                             if pools[0] in poolcolors:
                                 color1 = poolcolors[pools[0]]
                             else:
-                                color1 = 'm'
+                                color1 = 'r'
 
                             if pools[1] in poolcolors:
                                 color2 = poolcolors[pools[1]]
                             else:
-                                color2 = 'r'
+                                color2 = 'g'
 
-                                                            
-                            labels['intervals ' + pools[0]], = plotIntervals(Chr, intervals1, ax, color1)
-                            labels['intervals ' + pools[1]], = plotIntervals(Chr, intervals2, ax, color2)
+
+                            if len(Chrs)> 3:
+                                linetype = 'o'
+                            else:
+                                linetype = '-'
+                            if len(intervals1) > 0:
+                                labels['intervals ' + pools[0]], = plotIntervals(Chr, intervals1, ax, color1, linetype)
+                            if len(intervals2) > 0:
+                                labels['intervals ' + pools[1]], = plotIntervals(Chr, intervals2, ax, color2, linetype)
                     
 
 #### vergleich von zwei vcf files; es werden die delta values der zwei vcfs geplottet        
@@ -570,7 +578,7 @@ for key,value in labels.items():
 
 #print labels_list
 #['intervals P2', 'intervals P1', 'delta']
-#print labels_names
+print labels_names
 #[<matplotlib.lines.Line2D object at 0x7fd09dd06f50>, <matplotlib.lines.Line2D object at 0x7fd09dd06210>, <matplotlib.lines.Line2D object at 0x7fd09dec6510>]
 
 
@@ -587,9 +595,9 @@ if options.delta:
 plt.tick_params(axis='y', labelsize = 13)
 plt.tick_params(axis='x', labelsize=13)
         
-fig.legend(labels_names, labels_list, 'best', ncol = 1, shadow = False, numpoints = 1)
+#plt.legend(labels_names, labels_list, loc ='best', ncol = 1, shadow = False, numpoints = 1)
+fig.legend(labels_names, labels_list, loc = "upper center", ncol = 6, shadow = False, numpoints = 1, frameon = False)
 
-#fig.legend([labels_names[0]],labels_list[0],numpoints=2)
 
 
 ### clear memory
