@@ -14,6 +14,7 @@ import matplotlib as mpl
 import SNVer2SNPv2 
 from scipy.stats import kde
 import matplotlib.pyplot as plt
+from matplotlib.legend_handler import HandlerLine2D
 from AFAnalysis import *
 
 try:
@@ -50,7 +51,7 @@ parser.add_option('-L', '--low_mem', dest="low_mem", help='activate low-memory m
 parser.add_option('-K', '--contigfile', dest="contigfile", type="string", help='file containing contigpositions, .fna or .agp', default=False)
 parser.add_option('-M', '--Markerfile', dest="markerfile", type="string", help='file containing Markerpositions. Chromosomename in the first column, Position in the second.', default=False)
 parser.add_option('-E', '--Errorfile', dest="errorfile", type="string", help='file containing Errorpositions. Chromosomename in the first column, Position in the second.', default=False)
-parser.add_option('-H', '--Histogram', dest="histogram", help='plot a AF Histogram', action="store_true", default=False)
+parser.add_option('-H', '--Histogram', dest="histogram", help='plot an AF Histogram next to the plot of allele frequencies. If more than one chromosome is plottet, this option is ignored', action="store_true", default=False)
 parser.add_option('-d', '--delta', dest="delta", type="string", help='Plot a delta of the allelefrequency between the two pools. Possible: "False","True","only"', default=False)
 parser.add_option('-s', '--SNP_density_windowSize', dest="snpDensity", type="int", help='the size of the interval to evalute for the SNP measurement, step size for roling mean is interval/2')
 parser.add_option('-i', '--interval', dest="interval", type="int", help="define and plot interval , Try to find intervals that have been selected in both pools, filter out intervals shorter than given int"  ,default = False)
@@ -259,20 +260,24 @@ for Chr in Chrs: # make one plot for each chromosome
 
         if not options.vcffile2 :
         
-        ## plotChromosome(Chr, df_SNPs, pools)
 
-            print 'filtering for Chromosome: ' + Chr
+            print 'plotting Chromosome: ' + Chr
             chrSNPs = filterDataFrameForChromosome(df_SNPs,Chr) # only keep SNPs on Chromosome Chr
             if len(chrSNPs)==0:
                     continue
             else:
                     chrsToPlot.append(Chr)
                             
-                    
-            
+
+#### initialising the subplot                    
+            # calculating the location of the Axes, one per chromosome
+            # bottom and height are always the same, the starting point (left) depends on the number of the chromosome, the width on the totl number of chromosomes.
+            # With this, all chromosome plots have the same length
             #rect_cones = [left, bottom, width, height]
             rect_cones = [0.+1./len(Chrs)*(len(listOfAxes)), 0.1, 1./len(Chrs), 0.9]
+            # creating the axes and adding to a list for later reference
             listOfAxes.append(plt.axes(rect_cones))
+            # selecting the latest axis from the list
             ax = listOfAxes[-1]
 
             
@@ -284,19 +289,23 @@ for Chr in Chrs: # make one plot for each chromosome
             Statisticsfile.write('filtering for Chromosome: ' + Chr + " \n")
             Statisticsfile.write(str(chrSNPs.describe())+ " \n\n")
 
+
+##### determining color for the plot and plotting the allelefrequency data
             poolcolors = {}
             colors = "bgrcmykw"
             for pool in pools: # for each pool, the trianglesmoothed frequencies should be plotted
 
                     if 'red' in pool:
                             color = 'r'
-                            poolcolors[pool] = {color}
+                            poolcolors[pool] = color
                     elif 'green' in pool:
                             color = 'g'
-                            poolcolors[pool] = {color}
+                            poolcolors[pool] = color
                     else:
                             color = colors[pools.index(pool)]
-                            poolcolors[pool] = {color}
+                            poolcolors[pool] = color
+
+                            
                     if options.delta == 'only':
                             continue   # don't plot SNPs
                     else:
@@ -307,18 +316,18 @@ for Chr in Chrs: # make one plot for each chromosome
 
             
 
+
+
+##### modifying subplot labels and ticks
             plt.xlabel(Chr) # name the x axis of the subplot after the chromosome
+            
             if len(Chrs) >1 :
                     ax.set_xticklabels([]) # don't plot x axis ticks for any of the plots
             if Chrs.index(Chr) >= 1: # don't plot y axis for subplots
                     ax.set_yticklabels([])
-    #        if Chr == "lcl|Chr2":
-    #                plt.plot([6956605,6961171],[-0.1,1.1] ,"-", lw = 2.0)
-    #        if Chr == "A06":
-    #            plt.plot([24021769,24021769],[-0.1,1.1] ,"-", lw = 2.0)
 
 
-        # plotting delta values
+#### plotting delta values
             print "delta: " + str(options.delta)
             if options.delta == 'True' or options.delta == 'only':
                 deltaValues = plot_delta(chrSNPs, options.windowSize, pools, ax, labels, boost_flag = options.boost)
@@ -331,13 +340,15 @@ for Chr in Chrs: # make one plot for each chromosome
                           plotMovingAverage(chrSNPs, pools, windowSize, ax, labels)
 
 
-        # plot data, that is not specific to the pools
-        ### plot SNP density
+#### plot data, that is not specific to the pools
+
+
+### plot SNP density
             if options.snpDensity:
                 ax2 = plotSnpDensity(options.snpDensity, ax, chrSNPs, labels)				
                 
 
-
+### plot mean
             if options.mean:
                 if options.delta:
                 # plotting the mean of AF
@@ -346,7 +357,8 @@ for Chr in Chrs: # make one plot for each chromosome
                         AFmeanValues = chrSNPs["AF_mean"].tolist()
                         labels[AFmeanIndex], = ax.plot(chrSNPs['Position'],smoothTriangle(AFmeanValues,3),".r",label= "mean frequencies", alpha=0.5)
                         
-
+### plot contig borders
+                        
             if options.contigfile:
 		# plotting contigs
 		if options.contigfile.endswith('.agp'):
@@ -360,23 +372,24 @@ for Chr in Chrs: # make one plot for each chromosome
                 for contig in ContigPositions:
                     start,end = contig
                     # better use vlines
-                    labels['contigs'], = ax.plot([start,start],[0,1],"b", label="contigs", lw = 2.0)
+                    labels['contigs'], = ax.plot([start,start],[0,1], label="contigs", lw = 2.0)
 
+
+### plot genes from gff
             if options.genes_gff:
-                #import pdb
-                #pdb.set_trace()
                 print 'plotting genes'
                 gff = open(options.genes_gff, 'r')
-                #lines = [x.split().strip() for x in gff.readlines() if Chr in x]
-
                 listOfGenes = gff2ExonList(gff.readlines())
                 plotExonList(listOfGenes, ax)
                 gff.close()
                 del listOfGenes
 
+### plot undefined gff
             if options.gff:
                     plotgff(options.gff, Chr, ax)
 
+
+### calculate and plot intervals TODO in funktionen
             if options.interval and len(pools) > 1:
 
                             print 'starting iterative Interval search'
@@ -424,7 +437,6 @@ for Chr in Chrs: # make one plot for each chromosome
                                 
                             print 'Number of filtered Intervals: ' + str(filterCount1 + filterCount2)
 
-                            print poolcolors
                             if pools[0] in poolcolors:
                                 color1 = poolcolors[pools[0]]
                             else:
@@ -435,14 +447,12 @@ for Chr in Chrs: # make one plot for each chromosome
                             else:
                                 color2 = 'r'
 
-                            print color1
-                            print color2
-                                
+                                                            
                             labels['intervals ' + pools[0]], = plotIntervals(Chr, intervals1, ax, color1)
                             labels['intervals ' + pools[1]], = plotIntervals(Chr, intervals2, ax, color2)
                     
 
-        
+#### vergleich von zwei vcf files; es werden die delta values der zwei vcfs geplottet        
         elif options.vcffile1 and options.vcffile2 :
 
             print 'filtering for Chromosome: ' + Chr
@@ -479,8 +489,8 @@ for Chr in Chrs: # make one plot for each chromosome
                     ax.set_yticklabels([])
 
         # plotting delta values TODO::::::
-            plot_delta(chrSNPs1, options.windowSize, pools, ax, labels,  "y", "delta frequencies 360 Acc" ,  "delta 360 Acc", boost_flag = options.boost)
-            plot_delta(chrSNPs2, options.windowSize, pools, ax, labels,  "b", "delta frequencies  120 Acc" ,  "delta 120 Acc", boost_flag = options.boost)
+            plot_delta(chrSNPs1, options.windowSize, pools, ax, labels,  "y", "delta frequencies vcf1" ,  "delta vcf1", boost_flag = options.boost)
+            plot_delta(chrSNPs2, options.windowSize, pools, ax, labels,  "b", "delta frequencies  vcf2" ,  "delta vcf2", boost_flag = options.boost)
                          
 
                   
@@ -492,8 +502,10 @@ for Chr in Chrs: # make one plot for each chromosome
 ## adjusting the subplots according to the length of the Chromosome
 
 start = 0.12 # leave space for the ylabel
-plot_end = 0.85
+plot_end = 0.85 # leave some space to the right
 left = start
+
+## iterating through all subplots/axes
 for subplots in range(len(chrsToPlot)):
 
 	ax = listOfAxes[subplots] # get one axes instance
@@ -504,7 +516,7 @@ for subplots in range(len(chrsToPlot)):
 	xmin, xmax, ymin, ymax = ax.axis()
 	
 	
-	# modify the ticks 
+	# modify the ticks and label for the x-axis
 	start, end = ax.get_xlim()
 	if len(chrsToPlot) < 3:
 		#"Using standard ticks"
@@ -529,51 +541,56 @@ for subplots in range(len(chrsToPlot)):
 	
 	
 	# plot the allelefrequency histogram, if only one chromosome is plotted
-	if len(chrsToPlot) == 1:
-                    
-# plot the histogram
-                        if options.histogram:
-                            # rearrange the SNP plot, so a second plot can be shown
-                            ax.set_position([left-width+0.02, 0.1, width/2, 0.8])
-                            chrSNPs = filterDataFrameForChromosome(df_SNPs,chrsToPlot[0])
-                      
-                            # calculate parameters for the histogram plot
-                            width = width/2
-                            bottom, height = 0.1, 0.8
-                            bottom_h = left_h = left+width+0.02
-                            #rect_histy = [left_h, bottom, 0.2, height]
-                            rect_histy = [left -width + 0.06, bottom, width - 0.02, height]
-                            listOfAxes.append(plt.axes(rect_histy))
-                            ax = listOfAxes[-1]
-                            ax.set_ylim([-0.2, 1.2])
-                            #axHisty = plt.axes(rect_histy)
-                            bins = numpy.arange(-0.2, 1.2 + 0.02, 0.002)
-                            if len(pools) == 2:
-                                n, bons, patches  = ax.hist([chrSNPs['Frequency'+pools[0]],chrSNPs['Frequency'+pools[1]]], bins=bins, orientation='horizontal', alpha=0.5)
-                            else:
-                                n, bons, patches  = ax.hist([chrSNPs['Frequency'+pools[0]]], bins=bins, orientation='horizontal', alpha=0.5)
+        if options.histogram and len(chrsToPlot) == 1:
+            # rearrange the SNP plot, so a second plot can be shown
+            ax.set_position([left-width+0.02, 0.1, width/2, 0.8])
+            ax = filterDataFrameForChromosome(df_SNPs,chrsToPlot[0])
+            # calculate parameters for the histogram plot
+            width = width/2
+            bottom, height = 0.1, 0.8
+            bottom_h = left_h = left+width+0.02
+            rect_histy = [left -width + 0.06, bottom, width - 0.02, height]
+            listOfAxes.append(plt.axes(rect_histy))
+            ax = listOfAxes[-1]
+            ax.set_ylim([-0.2, 1.2])
+            bins = numpy.arange(-0.2, 1.2 + 0.02, 0.002)
+            if len(pools) == 2:
+                n, bons, patches  = ax.hist([chrSNPs['Frequency'+pools[0]],chrSNPs['Frequency'+pools[1]]], bins=bins, orientation='horizontal', alpha=0.5)
+            else:
+                n, bons, patches  = ax.hist([chrSNPs['Frequency'+pools[0]]], bins=bins, orientation='horizontal', alpha=0.5)
 
 
 
-
+#### labels
 labels_list = []
 labels_names = []
 for key,value in labels.items():
         labels_list.append(key)
         labels_names.append(value)
 
+#print labels_list
+#['intervals P2', 'intervals P1', 'delta']
+#print labels_names
+#[<matplotlib.lines.Line2D object at 0x7fd09dd06f50>, <matplotlib.lines.Line2D object at 0x7fd09dd06210>, <matplotlib.lines.Line2D object at 0x7fd09dec6510>]
+
+
 locs, labels2 = plt.xticks()
 if len(labels_list)>1:
     plt.setp(labels2, rotation=45)
 
+##### set a y-label only for the leftmost plot
 ax = listOfAxes[0]
 if options.delta:
     ax.set_ylabel('delta allele frequency estimate', fontsize=15)
-plt.tick_params(axis='y', labelsize = 13)
 
+##### set the size of the ticks
+plt.tick_params(axis='y', labelsize = 13)
 plt.tick_params(axis='x', labelsize=13)
         
-fig.legend(labels_names, labels_list, 'best', ncol = 1, shadow = False, scatterpoints = 1)
+fig.legend(labels_names, labels_list, 'best', ncol = 1, shadow = False, numpoints = 1)
+
+#fig.legend([labels_names[0]],labels_list[0],numpoints=2)
+
 
 ### clear memory
 del chrSNPs
