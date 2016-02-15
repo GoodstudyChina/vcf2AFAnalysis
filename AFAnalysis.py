@@ -188,11 +188,11 @@ gesucht. Erweitert werden die Intervalle dann so lange, wie die AF des ersten po
 
 
 ### ToDo In einen plot, effizienter
-def plotIntervals(chromosome, listOfIntervals, ax, color = 'm'):
+def plotIntervals(chromosome, listOfIntervals, ax, color = 'm', linetype = '-'):
     for interval in listOfIntervals:
             start, end, length = interval
-            ax.plot([int(start), int(end)],[1.1,1.1],color+'.-')
-    return
+            intervalPlt = ax.plot([int(start), int(end)],[1.1,1.1],color+linetype, linewidth=5)
+    return intervalPlt
     
 
 
