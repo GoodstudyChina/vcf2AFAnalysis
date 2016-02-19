@@ -305,7 +305,7 @@ for Chr in Chrs: # make one plot for each chromosome
                             color = colors[pools.index(pool)]
                             poolcolors[pool] = color
 
-                            
+
                     if options.delta == 'only':
                             continue   # don't plot SNPs
                     else:
@@ -440,12 +440,12 @@ for Chr in Chrs: # make one plot for each chromosome
 
 ##### assigning color of the interval plots according to the color of the pools
                             if pools[0] in poolcolors:
-                                color1 = poolcolors[pools[0]]
+                                color1 = str(poolcolors[pools[0]])
                             else:
                                 color1 = 'r'
 
                             if pools[1] in poolcolors:
-                                color2 = poolcolors[pools[1]]
+                                color2 = str(poolcolors[pools[1]])
                             else:
                                 color2 = 'g'
 
