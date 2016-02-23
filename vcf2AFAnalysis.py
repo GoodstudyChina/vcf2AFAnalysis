@@ -51,7 +51,7 @@ parser.add_option('-L', '--low_mem', dest="low_mem", help='activate low-memory m
 parser.add_option('-K', '--contigfile', dest="contigfile", type="string", help='file containing contigpositions, .fna or .agp', default=False)
 parser.add_option('-M', '--Markerfile', dest="markerfile", type="string", help='file containing Markerpositions. Chromosomename in the first column, Position in the second.', default=False)
 parser.add_option('-E', '--Errorfile', dest="errorfile", type="string", help='file containing Errorpositions. Chromosomename in the first column, Position in the second.', default=False)
-parser.add_option('-H', '--Histogram', dest="histogram", help='plot an AF Histogram next to the plot of allele frequencies. If more than one chromosome is plottet, this option is ignored', action="store_true", default=False)
+parser.add_option('-H', '--Histogram', dest="histogram", help='plot an AF Histogram next to the plot of allele frequencies. If more than one chromosome is plottet, this option is ignored. For F2 progeny from 2 parents, one would expect a normal distribution around 0.5', action="store_true", default=False)
 parser.add_option('-d', '--delta', dest="delta", type="string", help='Plot a delta of the allelefrequency between the two pools. Possible: "False","True","only"', default=False)
 parser.add_option('-s', '--SNP_density_windowSize', dest="snpDensity", type="int", help='the size of the interval to evalute for the SNP measurement, step size for roling mean is interval/2')
 parser.add_option('-i', '--interval', dest="interval", type="int", help="define and plot interval , Try to find intervals that have been selected in both pools, filter out intervals shorter than given int"  ,default = False)
@@ -498,7 +498,7 @@ for Chr in Chrs: # make one plot for each chromosome
 
         # plotting delta values TODO::::::
             plot_delta(chrSNPs1, options.windowSize, pools, ax, labels,  "y", "delta frequencies vcf1" ,  "delta vcf1", boost_flag = options.boost)
-            plot_delta(chrSNPs2, options.windowSize, pools, ax, labels,  "b", "delta frequencies  vcf2" ,  "delta vcf2", boost_flag = options.boost)
+            plot_delta(chrSNPs2, options.windowSize, pools, ax, labels,  "b", "delta frequencies vcf2" ,  "delta vcf2", boost_flag = options.boost)
                          
 
                   
@@ -526,16 +526,27 @@ for subplots in range(len(chrsToPlot)):
 	
 	# modify the ticks and label for the x-axis
 	start, end = ax.get_xlim()
+	##### set the size of the ticks
+	ax.tick_params(axis='y', labelsize = 13)
+	ax.tick_params(axis='x', labelsize = 13)
+
 	if len(chrsToPlot) < 3:
+		import matplotlib.ticker as tkr     # has classes for tick-locating and -formatting
+		yfmt = tkr.FuncFormatter(numfmt)    # create your custom formatter function
+
+
 		#"Using standard ticks"
-		ax.xaxis.set_ticks(numpy.arange(start, end, 1000000))
-		ax.set_xlabel(chrsToPlot[subplots], fontsize = 15)
+		ax.xaxis.set_ticks(numpy.arange(0, end, 1000000.0))
+		ax.ticklabel_format(axis = 'x', style = 'plain')
+		ax.xaxis.set_major_formatter(yfmt)
+
+		ax.set_xlabel(chrsToPlot[subplots] + ' [Mb]', fontsize = 15)
 		
 	else:
                 #"adjusting x-ticks and labels"
-		ax.xaxis.set_ticks(numpy.arange(start, end, 10000000))
+		ax.xaxis.set_ticks(numpy.arange(0, end, 10000000))
 			# rotate the label of the axes
-		ax.set_xlabel(chrsToPlot[subplots],rotation=45, fontsize = 12)
+		ax.set_xlabel(chrsToPlot[subplots] + ' [10 Mb]',rotation=45, fontsize = 12)
 	
 	
 	# Abmessungen des subplots bestimmen, 
@@ -548,28 +559,36 @@ for subplots in range(len(chrsToPlot)):
 	left = left + width  # der linke Rand des neuen Chromosomenplots ist das ende des vorherigen
 	
 	
-	# plot the allelefrequency histogram, if only one chromosome is plotted
-        if options.histogram and len(chrsToPlot) == 1:
-            # rearrange the SNP plot, so a second plot can be shown
-            ax.set_position([left-width+0.02, 0.1, width/2, 0.8])
-            ax = filterDataFrameForChromosome(df_SNPs,chrsToPlot[0])
-            # calculate parameters for the histogram plot
-            width = width/2
-            bottom, height = 0.1, 0.8
-            bottom_h = left_h = left+width+0.02
-            rect_histy = [left -width + 0.06, bottom, width - 0.02, height]
-            listOfAxes.append(plt.axes(rect_histy))
-            ax = listOfAxes[-1]
-            ax.set_ylim([-0.2, 1.2])
-            bins = numpy.arange(-0.2, 1.2 + 0.02, 0.002)
-            if len(pools) == 2:
-                n, bons, patches  = ax.hist([chrSNPs['Frequency'+pools[0]],chrSNPs['Frequency'+pools[1]]], bins=bins, orientation='horizontal', alpha=0.5)
-            else:
-                n, bons, patches  = ax.hist([chrSNPs['Frequency'+pools[0]]], bins=bins, orientation='horizontal', alpha=0.5)
+###### plot the allelefrequency histogram, if only one chromosome is plotted
+	if options.histogram and len(chrsToPlot) == 1:
+### arranging the plot layout, ax is the selected plot
+        # rearrange the SNP plot to half of its former width, so a second plot can be shown
+		ax.set_position([left-width+0.02, 0.1, width/2, 0.8])
+        # calculate parameters for the histogram plot
+		width = width/2
+		bottom, height = 0.1, 0.8
+		bottom_h = left_h = left+width+0.02
+		rect_histy = [left -width + 0.06, bottom, width - 0.02, height]
+### create and select a new plot in which to plot the histogram
+		listOfAxes.append(plt.axes(rect_histy)) # create
+		hist_ax = listOfAxes[-1] # select
+
+### plot the histogram
+		if len(pools) == 2:
+			chrSNPs[['Frequency'+pools[0],'Frequency'+pools[1]]].plot(kind='hist', orientation='horizontal', bins=100, alpha=0.5, logx=True, ax = hist_ax, ylim=(-0.2, 1.2))
+		elif len(pools) == 1:
+			chrSNPs['Frequency'+pools[0]].plot(kind='hist', orientation='horizontal', bins=100, logx=True, ax = hist_ax, ylim=(-0.2, 1.2))
+		else:
+			print "more than two pools, plotting only first two pools"
+			chrSNPs[['Frequency'+pools[0],'Frequency'+pools[1]]].plot(kind='hist', orientation='horizontal', bins=100, alpha=0.5, logx=True, ax = hist_ax, ylim=(-0.2, 1.2))
+
+# setting y and y label parameters for histogram.
+		hist_ax.tick_params(axis='y', labelleft='off', labelsize = 13)
+		hist_ax.set_xlabel('Frequency', fontsize=15)
+		hist_ax.tick_params(axis='x', labelsize = 13)
 
 
-
-#### labels
+####### labels
 labels_list = []
 labels_names = []
 for key,value in labels.items():
@@ -578,22 +597,34 @@ for key,value in labels.items():
 
 #print labels_list
 #['intervals P2', 'intervals P1', 'delta']
-print labels_names
+#print labels_names
 #[<matplotlib.lines.Line2D object at 0x7fd09dd06f50>, <matplotlib.lines.Line2D object at 0x7fd09dd06210>, <matplotlib.lines.Line2D object at 0x7fd09dec6510>]
 
 
-locs, labels2 = plt.xticks()
-if len(labels_list)>1:
-    plt.setp(labels2, rotation=45)
+###setting xticks and xlabels for all plots
+
+if len(labels_list)>1 or options.histogram: # if there is more than one plot, rotate all x tick labels
+	for ax in listOfAxes:
+		plt.setp(ax.get_xticklabels(), rotation=45)
+
+if len(labels_list)>3: # if there are more than 3 plots rotate all x labels (Chromosome names)
+	for ax in listOfAxes:
+		plt.setp(ax.xaxis.get_label(), rotation=45)
+
+
+
+
+
 
 ##### set a y-label only for the leftmost plot
 ax = listOfAxes[0]
 if options.delta:
     ax.set_ylabel('delta allele frequency estimate', fontsize=15)
+else:
+    ax.set_ylabel('allele frequency estimate', fontsize=15)
 
-##### set the size of the ticks
-plt.tick_params(axis='y', labelsize = 13)
-plt.tick_params(axis='x', labelsize=13)
+
+
         
 #plt.legend(labels_names, labels_list, loc ='best', ncol = 1, shadow = False, numpoints = 1)
 fig.legend(labels_names, labels_list, loc = "upper center", ncol = 6, shadow = False, numpoints = 1, frameon = False)

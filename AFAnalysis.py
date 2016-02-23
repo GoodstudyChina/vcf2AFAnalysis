@@ -819,6 +819,9 @@ def plotSnpDensity(snpDensityWindowSize, ax, chrSNPs, labels):
 
     return ax2
 
+def numfmt(x, pos): # your custom formatter function: divide by 100.0
+    s = '{}'.format(int(x) / 1000000)
+    return s
 
 def save_plot(fig, Path2OutputFile, dpi = 600):
     #mng = plt.get_current_fig_manager()
