@@ -72,7 +72,7 @@ parser.add_option('-f', '--filteredCSV', dest="filteredCSV", help='if set, the V
 # -d only -w 1000 , only plot a rolling men for the delta values
 # -d only -w 1000 -p green,red -v 360Acc.vcf -V 120Acc.vcf, plot the rolling mean for the delta values of two experiments, that have the same pools, but might differ in other parameters, like coverage or accessions used. 
 # if you run into memory problems, consider spliting your input file (.vcf or .snp) in one file per chromosome, or activating low-memory mode
-
+# -c Chr1 -H plot the AFE for Chr1, and a histogram of the AFE side by side. This is useful to see systematic bias or a skew in afe between the pools. In a crossing experiment of two parents, the F2 should both show a normal distribution of AFE aroud 0.5.
 
 
 (options, args) = parser.parse_args()
