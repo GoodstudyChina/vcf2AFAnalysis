@@ -14,6 +14,10 @@ import matplotlib as mpl
 import SNVer2SNPv2 
 from scipy.stats import kde
 import matplotlib.pyplot as plt
+try:
+    from IPython import embed
+except ImportError:
+    print "IPython is not installed"
 
 # TODO
 # scaffoldenden plotten von agp (als punkte)
@@ -298,6 +302,7 @@ BmChr1  1292    1341    2       N       50      scaffold        yes     paired-e
 
         for line in f:
             line = line.strip().split()
+            
             if line[0] == Chr and line[6] != 'scaffold': # only read data for Chr.  
                 start = line[1]
                 end = line[2]
@@ -305,10 +310,15 @@ BmChr1  1292    1341    2       N       50      scaffold        yes     paired-e
                 count += 1
        
         print  str(count) + ' contigs for '  + Chr +  ' read'
-        return contigPos         
+        return contigPos
+
+def calcAFforInterval(df, pool, chromosome, start,end):
+    '''Calculate the mean AF of a pool in an Interval from start to end'''
+    mean_af = df[(df['Chromosome'] == chromosome) & (df['Position'] >= start) & (df['Position'] <= end)]['Frequency'+pool].mean()
+    return mean_af
 
 
-def readSNVerSNPfile2dataFrame(path, namesOfPools, chromosome = 'all'):
+def readSNVerSNPfile2dataFrame(path, namesOfPools, chromosome = 'all', start = False, end = False):
         """reads in the tabdelimited txt file containing the SNPs and returns a dataframe. This file has to be created out of SNVer output using SNVer2SNP.py. The names of the pools have to be provided
         as a list in the right order (same order as in the file which is to be read in). The returned dataframe object can be large, since the whole data is stored and only later
         filtered for chromosomes, so you might consider prefiltering your input file for the chromosomes you want to analyze. If a list of specified chromosomes is given, Only one chromosome at a time is read in, resulting in less memory
@@ -343,6 +353,11 @@ def readSNVerSNPfile2dataFrame(path, namesOfPools, chromosome = 'all'):
 	
 	if chromosome == 'all':
             dataFrame = pandas.DataFrame(numpy.loadtxt(filehandle, dtype={'names': names,'formats': formats},usecols=cols))
+        elif start and end: # if a start and end position is given, only the variants inbetween are read, should only be used with one chromosome
+            iter_txt = pandas.read_table(filehandle, dtype={'names': names,'formats': formats}, usecols=cols, iterator=True, chunksize=1000, header = 0 , names = names)
+            
+            dataFrame = pandas.concat([chunk[(chunk['Chromosome'].isin(chromosome)) & (chunk['Position'] >= start) & (chunk['Position'] <= end) ] for chunk in iter_txt])
+          
         else: # reading in chunkwise, filtering each chunk for the desired chromosome
             iter_txt = pandas.read_table(filehandle, dtype={'names': names,'formats': formats}, usecols=cols, iterator=True, chunksize=1000, header = 0 , names = names)
             dataFrame = pandas.concat([chunk[chunk['Chromosome'].isin(chromosome)] for chunk in iter_txt])
@@ -619,13 +634,13 @@ def filterDataFrameForProportionalSNPs(dataFrame,proportional):
         return dataFrame
 
 
-def readAndFilterVariants(path_SNPs, pools, df_Markers, df_errors, Chrs, noninformative, coverage, proportional, Path2StatisticsFile, low_memory = False):
+def readAndFilterVariants(path_SNPs, pools, df_Markers, df_errors, Chrs, noninformative, coverage, proportional, Path2StatisticsFile, low_memory = False, start = False, end = False):
         
     print "processing"
     print path_SNPs
 
     if low_memory == True:
-        df_SNPs = readSNVerSNPfile2dataFrame(path_SNPs, pools, Chrs) # read in the SNP file as a dataframe, only for the requested chromosomes
+        df_SNPs = readSNVerSNPfile2dataFrame(path_SNPs, pools, Chrs, start, end) # read in the SNP file as a dataframe, only for the requested chromosomes
     else:
         df_SNPs = readSNVerSNPfile2dataFrame(path_SNPs, pools) # read in the SNP file as a dataframe, for all chromosomes
     stats = df_SNPs.describe()

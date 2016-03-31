@@ -41,11 +41,11 @@ parser.add_option('-V', '--vcf2', dest="vcffile2", type="string", help='vcf file
 parser.add_option('-g', '--genes_gff', dest="genes_gff", type="string", help='path to genes_gff file, containing genes to plot. Introns and exons will be plotted. This can be very timeconsuming for large files.')
 parser.add_option('-G', '--gff', dest="gff", type="string", help='path to generic file [chr, startpos, endpos] to plot as intervals')
 parser.add_option('-w', '--windowSize', dest="windowSize", type="int", help='the genomic length to calculate the rolling mean for. Step size is len/2. The rolling mean of the allele frequency will be calculated for both/all pools by default. if the -d option is set to "only", only the rolling mean of the delta allele frequenvy will be plotted.')
-parser.add_option('-c', '--chromosomes', dest="Chrs", type="string", default="all", help='the Chromosomes to plot, delimited by ",", default is "all". Specifying a list of chromosomes, will speed up processing significantly, because only nescessary data is read, and the chromosome determination step is skipped.')
+parser.add_option('-c', '--chromosomes', dest="Chrs", type="string", default="all", help='the Chromosomes to plot, delimited by ",", default is "all". Specifying a list of chromosomes, will speed up processing significantly, because only nescessary data is read, and the chromosome determination step is skipped. It is also possible to specify just one chromosome and a range to plot (Chr1:12345-56789)')
 parser.add_option('-p', '--pools', dest="pools", type="string", help='the sequenced pools, in the same order as in the SNPs file, delimited by ",". Most functions are only available for two pools.')
 parser.add_option('-P', '--proportional', dest="proportional", type="float", help='the level of allelefrequency for which SNPs must be proportional. For visualization.')
 parser.add_option('-o', '--output', dest="output", type="string", help='Output filename. If not set, an automatic name will be generated', default=False)
-parser.add_option('-x', '--coverage', dest="coverage", type="int", help='Coverage to filter for (coverage > x > coverage*3), "0" for automatic. The automatic filter will filter each chromosome seperately for (medianCoverage*0.75) > X > (medianCoverage*2.25)')
+parser.add_option('-x', '--coverage', dest="coverage", type="int", help='Coverage to filter for (coverage > x > coverage*3), "0" for automatic. The automatic filter will filter each chromosome seperately for (medianCoverage*0.75) > X > (medianCoverage*2.25). Automatic filtering is only advised for whole chromosomes.')
 parser.add_option('-m', '--mean', dest="mean", help='plot mean', action="store_true")
 parser.add_option('-L', '--low_mem', dest="low_mem", help='activate low-memory mode. This will use less memory, and make the script slower, but you will not get statistics about the whole dataset', action="store_true")
 parser.add_option('-K', '--contigfile', dest="contigfile", type="string", help='file containing contigpositions, .fna or .agp', default=False)
@@ -73,6 +73,7 @@ parser.add_option('-f', '--filteredCSV', dest="filteredCSV", help='if set, the V
 # -d only -w 1000 -p green,red -v 360Acc.vcf -V 120Acc.vcf, plot the rolling mean for the delta values of two experiments, that have the same pools, but might differ in other parameters, like coverage or accessions used. 
 # if you run into memory problems, consider spliting your input file (.vcf or .snp) in one file per chromosome, or activating low-memory mode
 # -c Chr1 -H plot the AFE for Chr1, and a histogram of the AFE side by side. This is useful to see systematic bias or a skew in afe between the pools. In a crossing experiment of two parents, the F2 should both show a normal distribution of AFE aroud 0.5.
+# -L -c BmChr3:12000-15000   --contigfile scaffold_10971_BLAST.agp  --windowSize 5000 -i 2500 plot only BmChr3 from base 12000 to 15000. Also plot scaffold and contog borders defined in the .agp file. Also plot a sliding window for the mean allelefrequeencies and search for segregating intervals larger than 2.5 kb 
 
 
 (options, args) = parser.parse_args()
@@ -108,10 +109,28 @@ if options.vcffile2:
 windowSize = options.windowSize
 
 
+chromosome_start = False
+chromosome_end = False
 
 Chrs = options.Chrs
 if Chrs != "all":
 	Chrs = Chrs.strip().split(',')
+	# get start and stop if set
+	if len(Chrs) == 1 and ':' in Chrs[0] and '-' in Chrs[0]:
+            Chromosome, pos = Chrs[0].split(':')
+            chromosome_start, chromosome_end = pos.split('-')
+            chromosome_start = int(chromosome_start)
+            chromosome_end = int(chromosome_end)
+            print 'reading only chromosome: '
+            print Chromosome
+            print 'from: to:'
+            print chromosome_start, chromosome_end
+            Chrs = []
+            Chrs.append(Chromosome)
+            
+
+
+            
 
 print 'Chromosomes to plot:'
 print Chrs
@@ -211,7 +230,11 @@ path_SNPs = checkOrCreateSNPfile(path_VCF)
 
 
 ### read in and filter variants
-if options.low_mem == True:
+
+if chromosome_start and chromosome_end:
+    df_SNPs, Chrs = readAndFilterVariants(path_SNPs, pools, df_Markers, df_Errors, Chrs, noninformative, coverage, proportional, Path2StatisticsFile, low_memory = True, start = chromosome_start, end = chromosome_end)
+
+elif options.low_mem == True:
     df_SNPs, Chrs = readAndFilterVariants(path_SNPs, pools, df_Markers, df_Errors, Chrs, noninformative, coverage, proportional, Path2StatisticsFile, low_memory = True)
 else:
     df_SNPs, Chrs = readAndFilterVariants(path_SNPs, pools, df_Markers, df_Errors, Chrs, noninformative, coverage, proportional, Path2StatisticsFile)
@@ -283,7 +306,8 @@ for Chr in Chrs: # make one plot for each chromosome
             
             
             first_SNPs.append(chrSNPs['Position'].irow(0)) # save the length of the Chromosome   
-            last_SNPs.append(chrSNPs['Position'].irow(-1)) # save the length of the Chromosome   
+            last_SNPs.append(chrSNPs['Position'].irow(-1)) # save the length of the Chromosome
+            print first_SNPs, last_SNPs
 
 
             Statisticsfile.write('filtering for Chromosome: ' + Chr + " \n")
@@ -372,7 +396,10 @@ for Chr in Chrs: # make one plot for each chromosome
                 for contig in ContigPositions:
                     start,end = contig
                     # better use vlines
-                    labels['contigs'], = ax.plot([start,start],[0,1], label="contigs", lw = 2.0)
+                    mean_af = calcAFforInterval(chrSNPs, pools[0], Chr, int(start),int(end))
+                    if mean_af != 'nan':
+                        labels['contigs'], = ax.plot([start,end],[mean_af,mean_af], label="contigs", lw = 2.0, marker = '>')
+                    print calcAFforInterval(chrSNPs, pools[0], Chr, int(start),int(end))
 
 
 ### plot genes from gff
