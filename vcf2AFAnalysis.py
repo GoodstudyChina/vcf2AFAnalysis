@@ -450,6 +450,17 @@ for Chr in Chrs: # make one plot for each chromosome
                                     Statisticsfile.write('Filtered ' + str(filterCount1) + ' intervals, with length: ' + str(sum(tup[2] for tup in filteredIntervals1))+ " \n")
                                     Statisticsfile.write(str(filteredIntervals1)+ " \n")
 
+
+                                    if len(intervals1) > 1:
+                                        print intervals1
+                                        print 'Length of intervals: ' + str(sum(tup[2] for tup in intervals1))
+                                        intervals1 = mergeIntervals(intervals1, 0)
+                                        print "Smoothed intervals for " + pools[0]
+                                        print intervals1
+                                        print 'Length of intervals: ' + str(sum(tup[2] for tup in intervals1))
+                                        Statisticsfile.write("Smoothed intervals for " + pools[0])
+                                        Statisticsfile.write(str(intervals1))
+                                        Statisticsfile.write('Length of intervals: ' + str(sum(tup[2] for tup in intervals1)))               
                                     
                                     Statisticsfile.write('Found intervals with threshold ' + str(threshold) + ' and outlier tolerance ' + str(outlierTolerance)+ " \n")
                                     Statisticsfile.write(str(len(intervals2)) + ' intervals for pool ' + pools[1] + "\n")
@@ -457,7 +468,7 @@ for Chr in Chrs: # make one plot for each chromosome
                                     Statisticsfile.write('Length of intervals: ' + str(sum(tup[2] for tup in intervals2))+ " \n")
                                     Statisticsfile.write('Filtered ' + str(filterCount2) + ' intervals, with length: ' + str(sum(tup[2] for tup in filteredIntervals2))+ " \n")
                                     Statisticsfile.write(str(filteredIntervals2)+ " \n")
-                                    
+                     
                             
                             else:
                                     print 'No intervals could be found'
@@ -483,8 +494,8 @@ for Chr in Chrs: # make one plot for each chromosome
                                 linetype = '-'
                             if len(intervals1) > 0:
                                 labels['intervals ' + pools[0]], = plotIntervals(Chr, intervals1, ax, color1, linetype)
-                            if len(intervals2) > 0:
-                                labels['intervals ' + pools[1]], = plotIntervals(Chr, intervals2, ax, color2, linetype)
+                            #if len(intervals2) > 0:
+                                #labels['intervals ' + pools[1]], = plotIntervals(Chr, intervals2, ax, color2, linetype)
                     
 
 #### vergleich von zwei vcf files; es werden die delta values der zwei vcfs geplottet        
@@ -573,7 +584,8 @@ for subplots in range(len(chrsToPlot)):
                 #"adjusting x-ticks and labels"
 		ax.xaxis.set_ticks(numpy.arange(0, end, 10000000))
 			# rotate the label of the axes
-		ax.set_xlabel(chrsToPlot[subplots] + ' [10 Mb]',rotation=45, fontsize = 12)
+		ax.set_xlabel(chrsToPlot[subplots] ,rotation=45, fontsize = 12)
+                #ax.set_xlabel(chrsToPlot[subplots] + ' [10 Mb]',rotation=45, fontsize = 12)
 	
 	
 	# Abmessungen des subplots bestimmen, 

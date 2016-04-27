@@ -171,24 +171,97 @@ gesucht. Erweitert werden die Intervalle dann so lange, wie die AF des ersten po
                 #extend upstream
                 start = extendIntervalUpstream(SNPDataFrame, start,pool, threshold, outlierTolerance)
                    
+                intervalLength = int(end) - int(start) + 1
+                listOfIntervals.append((int(start),int(end),intervalLength))
+                while  i < len(listOfPutativeStartPositions) and end >= listOfPutativeStartPositions[i]:
+                           # "skip seeds that overlap the interval"
+                    i += 1
+                start = 0
+
+
                 
 ######## filtering intervals for size
-                intervalLength = int(end) - int(start) + 1
-                if intervalLength < filterIntervalsSmallerThan:
-                       # "storing filtered Interval"
-                       listOfFilteredIntervals.append((int(start),int(end),intervalLength))
-                       start = 0
-                       filterCount+=1
-                       i += 1
-                else:
-                       # "appending interval"
-                       listOfIntervals.append((int(start),int(end),intervalLength))
-                       while  i < len(listOfPutativeStartPositions) and end >= listOfPutativeStartPositions[i]:
-                           # "skip seeds that overlap the interval"
-                           i += 1
-                       start = 0
+#                intervalLength = int(end) - int(start) + 1
+#                if intervalLength < filterIntervalsSmallerThan:
+#                       # "storing filtered Interval"
+#                       listOfFilteredIntervals.append((int(start),int(end),intervalLength))
+#                       start = 0
+#                       filterCount+=1
+#                       i += 1
+#                else:
+#                       # "appending interval"
+#                       listOfIntervals.append((int(start),int(end),intervalLength))
+#                       while  i < len(listOfPutativeStartPositions) and end >= listOfPutativeStartPositions[i]:
+#                           # "skip seeds that overlap the interval"
+#                           i += 1
+#                       start = 0
 
-    return listOfIntervals, filterCount, listOfFilteredIntervals
+    print 'merging intervals'
+    if len(listOfIntervals) > 1:
+        intervals = mergeIntervals(listOfIntervals, 0)
+    else:
+        intervals = listOfIntervals
+        
+    listOfIntervals = []
+
+    print 'filtering intervals smaller than ' + str(filterIntervalsSmallerThan)
+    for i in intervals:
+        if i[2] < filterIntervalsSmallerThan:
+            listOfFilteredIntervals.append(i)
+        else:
+            listOfIntervals.append(i)
+
+    return listOfIntervals, len(listOfFilteredIntervals), listOfFilteredIntervals
+
+
+def mergeIntervals(listOfIntervals, dist):
+	"""Takes a list of sorted intervals [(start,end,length),...] "listOfOIntervals" and an integer "dist". Merges intervals into one, that are less than "dist" away from each other.
+        If the dist is 0, intervals will be merged on a percentage of the final interval size"""
+	mergedIntervals = []
+
+        dynamic = False
+        if dist == 0:
+            dynamic = True
+
+	interval = listOfIntervals[0]
+	for i in range(len(listOfIntervals)):
+
+		if i == 0:
+			interval = listOfIntervals[0]
+
+                
+		if i == len(listOfIntervals) - 2: # letztes interval
+			start1, end1, len1 = interval
+			start2, end2, len2 = listOfIntervals[i+1]
+			if dynamic == True:
+                            dist = (end2 - start1) * 0.01
+                            print dist 
+			if start2 - end1 < dist:
+				interval=(start1, end2, end2 - start1)
+				mergedIntervals.append(interval)
+				return mergedIntervals
+
+
+			else:
+				mergedIntervals.append(interval)
+				mergedIntervals.append(listOfIntervals[i+1])
+				return mergedIntervals
+
+			
+		else:
+			start1, end1, len1 = interval
+			start2, end2, len2 = listOfIntervals[i+1]
+			if dynamic == True:
+                            dist = (end2 - start1) * 0.05
+                            
+			if start2 - end1 < dist:
+				interval=(start1, end2, end2 - start1)
+			else:
+				mergedIntervals.append(interval)
+				interval = listOfIntervals[i+1]
+	return mergedIntervals
+
+# Wenn kein nächstes Interval mehr existiert wird das letzte appended. Einmal testen mit einer erfundenen Intervalliste
 
 
 ### ToDo In einen plot, effizienter
