@@ -62,7 +62,7 @@ parser.add_option('-f', '--filteredCSV', dest="filteredCSV", help='if set, the V
 
 
 ## TODO:
-
+# header einlesen, dann weiß man schon die Chromosomen, die es gibt und die länge der chr
 # Werte nur einmal aus dem array auslesen und zwischenspeichern zb. positions = chrSNPs['Position']
 # filter fuer kollabierte Bereiche: Zusammenhanegende Bereiche, deren Coverage zu hoch , aber deren AF zu niedrig ist rausfiltern
 
@@ -586,6 +586,23 @@ for subplots in range(len(chrsToPlot)):
 			# rotate the label of the axes
 		ax.set_xlabel(chrsToPlot[subplots] ,rotation=45, fontsize = 12)
                 #ax.set_xlabel(chrsToPlot[subplots] + ' [10 Mb]',rotation=45, fontsize = 12)
+
+
+# Modification of the plot for the rhizomania paper
+                # Don't plot vertical lines and their ticks for unmapped parts of chromosomes 
+    		# set the linewidth of vertical frame lines
+##		if subplots%2==1:
+##                    ax.spines["left"].set_visible(False)
+##                    ax.yaxis.set_ticks_position('right')
+##
+##                elif chrsToPlot[subplots] == "Unmapped":
+##                    ax.spines["left"].set_visible(True)
+##                    
+##                else:
+##                    
+##                    ax.spines["right"].set_visible(False)
+##                    #ax.spines["right"].set_linewidth(0)
+##                    ax.yaxis.set_ticks_position('left')
 	
 	
 	# Abmessungen des subplots bestimmen, 
@@ -658,9 +675,9 @@ if len(labels_list)>3: # if there are more than 3 plots rotate all x labels (Chr
 ##### set a y-label only for the leftmost plot
 ax = listOfAxes[0]
 if options.delta:
-    ax.set_ylabel('delta allele frequency estimate', fontsize=15)
+    ax.set_ylabel('Delta allele frequency estimate', fontsize=15)
 else:
-    ax.set_ylabel('allele frequency estimate', fontsize=15)
+    ax.set_ylabel('Allele frequency estimate', fontsize=15)
 
 
 
