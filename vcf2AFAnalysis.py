@@ -498,8 +498,8 @@ for Chr in Chrs: # make one plot for each chromosome
                                 linetype = '-'
                             if len(intervals1) > 0:
                                 labels['intervals ' + pools[0]], = plotIntervals(Chr, intervals1, ax, color1, linetype)
-                            #if len(intervals2) > 0:
-                                #labels['intervals ' + pools[1]], = plotIntervals(Chr, intervals2, ax, color2, linetype)
+                            if len(intervals2) > 0:
+                                labels['intervals ' + pools[1]], = plotIntervals(Chr, intervals2, ax, color2, linetype)
                     
 
 #### vergleich von zwei vcf files; es werden die delta values der zwei vcfs geplottet        
