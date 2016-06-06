@@ -79,41 +79,47 @@ def extendIntervalUpstream(SNPDataFrame, position, pool, threshold, outlierToler
 
 
                 while extend == True:
-                    #print "start: " + str(start)
-                    previousSNP = SNPDataFrame[(SNPDataFrame['Position'] < start)].tail(1)
-                    #print previousSNP
-                    #print "AF:"
-                    #print previousSNP.iloc[0]['Frequency' + pools[0]]
-                    #print "error count: " + str(errorCount)
-                    if (previousSNP.iloc[0]['Frequency' + pool]  <= threshold) and errorCount < outlierTolerance:
-                        start = previousSNP.iloc[0,1]
-                        errorCount = 0
-                        #print 'correct frequency until ' + str(start)
-                    elif (previousSNP.iloc[0]['Frequency' + pool]  >= threshold) and errorCount < outlierTolerance:
-                        searchPosition = previousSNP
-                        while len(searchPosition.index)>0 and (searchPosition.iloc[0]['Frequency' + pool]  >= threshold) and errorCount < outlierTolerance: # falls der errorCounter noch nicht zu hoch ist wird weiter verlängert
-                            #print 'trying to extend interval to ' + str(searchPosition.iloc[0,1])
-                            #print 'AF ' + str(searchPosition.iloc[0]['Frequency' + pools[0]])
-                            #print 'nextAF ' + str(SNPDataFrame[(SNPDataFrame['Position'] < searchPosition.iloc[0,1])].tail(1).iloc[0]['Frequency' + pools[0]])
-                            if len(SNPDataFrame[(SNPDataFrame['Position'] < searchPosition.iloc[0,1])].index) != 0 and (SNPDataFrame[(SNPDataFrame['Position'] < searchPosition.iloc[0,1])].tail(1).iloc[0]['Frequency' + pool]  <= threshold):
-                                start = searchPosition.iloc[0,1]
-                                break
 
-
-                            searchPosition = SNPDataFrame[(SNPDataFrame['Position'] < searchPosition.iloc[0,1])].tail(1)
-                            errorCount += 1
-                            #print "Error Count"
-                            #print errorCount
-                            
-                        
-                        
-                        if (SNPDataFrame[(SNPDataFrame['Position'] < start)].tail(1).iloc[0]['Frequency' + pool]  <= threshold):
+                    try:
+                        #print "start: " + str(start)
+                        previousSNP = SNPDataFrame[(SNPDataFrame['Position'] < start)].tail(1)
+                        #print previousSNP
+                        #print "AF:"
+                        #print previousSNP.iloc[0]['Frequency' + pools[0]]
+                        #print "error count: " + str(errorCount)
+                        if (previousSNP.iloc[0]['Frequency' + pool]  <= threshold) and errorCount < outlierTolerance:
+                            start = previousSNP.iloc[0,1]
                             errorCount = 0
-                            #print 'reseting counter'
-                        
-                        
-                    else:
-                        extend = False
+                            #print 'correct frequency until ' + str(start)
+                            
+                        elif (previousSNP.iloc[0]['Frequency' + pool]  >= threshold) and errorCount < outlierTolerance:
+                            searchPosition = previousSNP
+                            while len(searchPosition.index)>0 and (searchPosition.iloc[0]['Frequency' + pool]  >= threshold) and errorCount < outlierTolerance: # falls der errorCounter noch nicht zu hoch ist wird weiter verlängert
+                                #print 'trying to extend interval to ' + str(searchPosition.iloc[0,1])
+                                #print 'AF ' + str(searchPosition.iloc[0]['Frequency' + pools[0]])
+                                #print 'nextAF ' + str(SNPDataFrame[(SNPDataFrame['Position'] < searchPosition.iloc[0,1])].tail(1).iloc[0]['Frequency' + pools[0]])
+                                if len(SNPDataFrame[(SNPDataFrame['Position'] < searchPosition.iloc[0,1])].index) != 0 and (SNPDataFrame[(SNPDataFrame['Position'] < searchPosition.iloc[0,1])].tail(1).iloc[0]['Frequency' + pool]  <= threshold):
+                                    start = searchPosition.iloc[0,1]
+                                    break
+
+
+                                searchPosition = SNPDataFrame[(SNPDataFrame['Position'] < searchPosition.iloc[0,1])].tail(1)
+                                errorCount += 1
+                                #print "Error Count"
+                                #print errorCount
+                                
+                            
+                            
+                            if (SNPDataFrame[(SNPDataFrame['Position'] < start)].tail(1).iloc[0]['Frequency' + pool]  <= threshold):
+                                errorCount = 0
+                                #print 'reseting counter'
+                            
+                            
+                        else:
+                            extend = False
+
+                    except IndexError:
+                        return start
  
                 return start
 
