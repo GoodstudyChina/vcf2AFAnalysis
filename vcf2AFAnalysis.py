@@ -591,17 +591,22 @@ for subplots in range(len(chrsToPlot)):
 # Modification of the plot for the rhizomania paper
                 # Don't plot vertical lines and their ticks for unmapped parts of chromosomes 
     		# set the linewidth of vertical frame lines
-##		if subplots%2==1:
+
+
+##                if chrsToPlot[subplots] == "BmUnmapped":
+##                    ax.spines["left"].set_visible(True)
+##                elif chrsToPlot[subplots] == "BmRandom":
+##                    ax.spines["right"].set_visible(True)
+##                    
+##                    
+##		elif subplots%2==1:
 ##                    ax.spines["left"].set_visible(False)
 ##                    ax.yaxis.set_ticks_position('right')
 ##
-##                elif chrsToPlot[subplots] == "Unmapped":
-##                    ax.spines["left"].set_visible(True)
 ##                    
 ##                else:
 ##                    
 ##                    ax.spines["right"].set_visible(False)
-##                    #ax.spines["right"].set_linewidth(0)
 ##                    ax.yaxis.set_ticks_position('left')
 	
 	
