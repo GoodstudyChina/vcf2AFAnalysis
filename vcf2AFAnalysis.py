@@ -197,7 +197,7 @@ if options.markerfile:
 		print df_Markers.head()
 		Statisticsfile = open(Path2StatisticsFile, 'w')	
                 Statisticsfile.write("Using Markerfile:" + "\n")
-                Statisticsfile.write(df_Markers.describe())
+                Statisticsfile.write(str(df_Markers.describe()))
                 Statisticsfile.write( "\n")
                 Statisticsfile.close()
 
@@ -216,7 +216,7 @@ if options.errorfile:
 		print df_Errors.head()
 		Statisticsfile = open(Path2StatisticsFile, 'w')	
                 Statisticsfile.write("Using Errorfile:" + "\n")
-                Statisticsfile.write(df_Errors.describe())
+                Statisticsfile.write(str(df_Errors.describe()))
                 Statisticsfile.write( "\n")
                 Statisticsfile.close()
 
