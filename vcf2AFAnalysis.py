@@ -195,9 +195,11 @@ if options.markerfile:
 		print "Markerfile read:"
 		print df_Markers.describe()
 		print df_Markers.head()
+		Statisticsfile = open(Path2StatisticsFile, 'w')	
                 Statisticsfile.write("Using Markerfile:" + "\n")
                 Statisticsfile.write(df_Markers.describe())
                 Statisticsfile.write( "\n")
+                Statisticsfile.close()
 
 	elif os.stat(path_Markerfile)[6]==0:
 		print "Markerfile is empty"
@@ -212,9 +214,11 @@ if options.errorfile:
 		print "Errorfile read:"
 		print df_Errors.describe()
 		print df_Errors.head()
+		Statisticsfile = open(Path2StatisticsFile, 'w')	
                 Statisticsfile.write("Using Errorfile:" + "\n")
                 Statisticsfile.write(df_Errors.describe())
                 Statisticsfile.write( "\n")
+                Statisticsfile.close()
 
 	elif os.stat(path_Errorfile)[6]==0:
 		print "Errorfile is empty"
