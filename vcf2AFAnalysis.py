@@ -189,7 +189,7 @@ Path2StatisticsFile = Path2OutputFile + ".txt"
 
 df_Markers = False
 if options.markerfile:
-	path_Markerfile = os.path.abspath(options.markerfile, Chrs)
+	path_Markerfile = os.path.abspath(options.markerfile)
 	if os.path.isfile(path_Markerfile) and not os.stat(path_Markerfile)[6]==0:
 		df_Markers = readMarkerfile(path_Markerfile)
 		print "Markerfile read:"
@@ -206,7 +206,7 @@ if options.markerfile:
 
 df_Errors = False
 if options.errorfile:
-	path_Errorfile = os.path.abspath(options.errorfile, Chrs)
+	path_Errorfile = os.path.abspath(options.errorfile)
 	if os.path.isfile(path_Errorfile) and not os.stat(path_Errorfile)[6]==0:
 		df_Errors = readMarkerfile(path_Errorfile)
 		print "Errorfile read:"
