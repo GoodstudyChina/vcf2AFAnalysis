@@ -271,10 +271,10 @@ def mergeIntervals(listOfIntervals, dist):
 
 
 ### ToDo In einen plot, effizienter
-def plotIntervals(chromosome, listOfIntervals, ax, color = 'm', linetype = '-'):
+def plotIntervals(chromosome, listOfIntervals, ax, color = 'm', linetype = '-', hight = 1.1):
     for interval in listOfIntervals:
             start, end, length = interval
-            intervalPlt = ax.plot([int(start), int(end)],[1.1,1.1],color+linetype, linewidth=5)
+            intervalPlt = ax.plot([int(start), int(end)],[hight,hight],color+linetype, linewidth=5)
     return intervalPlt
     
 

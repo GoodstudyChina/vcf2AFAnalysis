@@ -420,7 +420,7 @@ for Chr in Chrs: # make one plot for each chromosome
                     plotgff(options.gff, Chr, ax)
 
 
-### calculate and plot intervals TODO in funktionen
+### calculate and plot intervals 
             if options.interval and len(pools) > 1:
 
                             print 'starting iterative Interval search'
@@ -499,7 +499,7 @@ for Chr in Chrs: # make one plot for each chromosome
                             if len(intervals1) > 0:
                                 labels['intervals ' + pools[0]], = plotIntervals(Chr, intervals1, ax, color1, linetype)
                             if len(intervals2) > 0:
-                                labels['intervals ' + pools[1]], = plotIntervals(Chr, intervals2, ax, color2, linetype)
+                                labels['intervals ' + pools[1]], = plotIntervals(Chr, intervals2, ax, color2, linetype, hight = 1.15)
                     
 
 #### vergleich von zwei vcf files; es werden die delta values der zwei vcfs geplottet        
@@ -597,21 +597,21 @@ for subplots in range(len(chrsToPlot)):
     		# set the linewidth of vertical frame lines
 
 
-##                if chrsToPlot[subplots] == "BmUnmapped":
-##                    ax.spines["left"].set_visible(True)
-##                elif chrsToPlot[subplots] == "BmRandom":
-##                    ax.spines["right"].set_visible(True)
-##                    
-##                    
-##		elif subplots%2==1:
-##                    ax.spines["left"].set_visible(False)
-##                    ax.yaxis.set_ticks_position('right')
-##
-##                    
-##                else:
-##                    
-##                    ax.spines["right"].set_visible(False)
-##                    ax.yaxis.set_ticks_position('left')
+                if chrsToPlot[subplots] == "BmUnmapped":
+                    ax.spines["left"].set_visible(True)
+                elif chrsToPlot[subplots] == "BmRandom":
+                    ax.spines["right"].set_visible(True)
+                    
+                    
+		elif subplots%2==1:
+                    ax.spines["left"].set_visible(False)
+                    ax.yaxis.set_ticks_position('right')
+
+                    
+                else:
+                    
+                    ax.spines["right"].set_visible(False)
+                    ax.yaxis.set_ticks_position('left')
 	
 	
 	# Abmessungen des subplots bestimmen, 
